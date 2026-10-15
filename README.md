@@ -1,42 +1,73 @@
-# Game Changer 🎯
+# Game Changer: Body 🎯
 
-Game Changer is an elite habit-tracking and productivity Mini App for Telegram. 
-Built for those who want to build discipline through gamification.
+**Game Changer: Body** — прогрессивное веб-приложение (PWA) для микротренировок и роста физической силы при удаленной работе из дома.
 
-## Features
-- **Telegram Mini App Integration**: Seamlessly works inside Telegram as a Web App.
-- **Gamified Habits**: Keep your "Streak" alive. If you fail, you lose a "Life" (❤️).
-- **Shields (Freeze)**: Use limited monthly shields to freeze your streak on rest days.
-- **Push Notifications**: Receive automated reminders and penalty notifications via the Telegram Bot.
-- **Clean UI**: Beautiful, dark-mode minimalist interface focused on reducing friction.
+## 🚀 Основные возможности
 
-## Tech Stack
-- **Frontend**: React, TypeScript, Tailwind CSS, Vite, Lucide Icons.
-- **Backend**: Node.js, Grammy (Telegram Bot framework), node-cron.
-- **Database**: Supabase (PostgreSQL).
-
-## Project Structure
-- `/frontend`: The React UI built as a Telegram Web App.
-- `/backend`: The Telegram Bot responsible for notifications and midnight streak calculations.
-
-## Installation
-
-### Frontend
-1. cd `frontend`
-2. Run `npm install`
-3. Run `npm run dev`
-4. Make sure to set your `.env` variables (e.g. `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`).
-
-### Backend
-1. cd `backend`
-2. Run `npm install`
-3. Rename `.env.example` to `.env` and fill in your keys (`TELEGRAM_BOT_TOKEN`, `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`).
-4. Run `npm start` (or use `pm2 start npm --name "bot" -- start` for production).
-
-## Roadmap
-- [ ] Implement robust RLS (Row Level Security) in Supabase.
-- [ ] Add Guidelines/Marketplace for habits.
-- [ ] Introduce User Levels & XP.
+1. **PWA и Установка (iOS 16.4+ и Android)**:
+   - Поддержка `manifest.webmanifest` и Service Worker.
+   - Установка на домашний экран в режиме Standalone без рамок браузера.
+2. **Web Push Уведомления (VAPID, без платных аккаунтов)**:
+   - Персональные уведомления по выбору пользователя (в конце тренировки пользователь сам указывает время следующего пуша: "завтра в 11:00", "через 2 дня" или кастомное время).
+   - Никакого хаотичного спама.
+3. **5 Параллельных Дисциплин**:
+   - 🦾 **Подтягивания** (повторения)
+   - ⚡ **Отжимания** (повторения)
+   - 🛡️ **Планка** (секунды)
+   - 📐 **Уголок (L-sit)** (секунды)
+   - 🏋️ **Гантели** (рабочий вес в кг + повторения)
+   - Пользователь может вести прогресс по всем дисциплинам параллельно и переключаться в один клик.
+4. **Тропа Прогрессии (Trail) в стиле Duolingo**:
+   - Пользователь сам задает количество тренировок при старте (например 20, 30 или 90).
+   - Эволюционирующий визуальный стиль карточек:
+     - **0–25%**: *Stone* (брутальный камень/гранит)
+     - **26–55%**: *Bronze/Steel* (холодная сталь и бронза)
+     - **56–85%**: *Gold* (золотой обсидиан `#d4af37`)
+     - **86–100%**: *Inferno* (мифическое пламя)
+5. **Экран тренировки и Интерактивный таймер отдыха**:
+   - План из 5 подходов.
+   - Таймер отдыха (по умолчанию 120 сек) с кнопками «Пауза/Старт», «+30 сек», «Пропустить».
+   - Звуковой сигнал (Web Audio API) и виброотклик (Web Vibration API) по окончании отдыха.
+6. **Умная сложность (Feedback)**:
+   - Кнопки: «Легко», «Нормально», «Смерть».
+   - При выборе «Смерть» алгоритм незаметно снижает объем следующей тренировки (-1-2 повт или -5 сек), предотвращая перетренированность.
+7. **Аутентификация**:
+   - Supabase Auth (Email + Password) + локальный оффлайн-режим.
 
 ---
-*Focus. Discipline. Freedom.*
+
+## 🛠️ Стек технологий
+
+- **Frontend**: React 19, TypeScript, Vite, Tailwind CSS v4, Lucide Icons, Vitest, Testing Library.
+- **Backend**: Node.js, Express, `web-push` (VAPID), Supabase Client, Vitest, Supertest.
+- **Database**: Supabase (PostgreSQL) с RLS.
+
+---
+
+## 📦 Быстрый старт и локальный запуск
+
+### 1. Настройка базы данных (Supabase)
+Выполните SQL-скрипт из файла [`backend/schema.sql`](file:///c:/Users/Lenovo/Documents/game_changer_web_train/backend/schema.sql) в SQL Editor вашего проекта Supabase.
+
+### 2. Запуск Backend (Node.js)
+```bash
+cd backend
+npm install
+npm test            # Запуск тестов Vitest
+npm run dev         # Запуск сервера на порту 3001 (tsx)
+```
+> При первом запуске бэкенд автоматически сгенерирует пару VAPID-ключей и выведет их в терминал. Сохраните их в файл `backend/.env`.
+
+Для деплоя на VPS через PM2:
+```bash
+pm2 start npm --name "gc-body-backend" -- run dev
+```
+
+### 3. Запуск Frontend (PWA)
+```bash
+cd frontend
+npm install
+npm test            # Запуск 18 тестов Vitest
+npm run dev         # Локальный сервер Vite (http://localhost:5173)
+npm run build       # Сборка продакшн бандла для Vercel
+```

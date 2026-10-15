@@ -1,13 +1,22 @@
 <!doctype html>
-<html lang="en">
+<html lang="ru" class="dark">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <title>Game Changer</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    
+    <title>Game Changer: Body</title>
+    <meta name="description" content="PWA для микротренировок и прогрессии силы при удаленной работе" />
+    
+    <!-- PWA settings -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#09090b" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="GC: Body" />
+    <link rel="apple-touch-icon" href="/favicon.svg" />
   </head>
-  <body>
+  <body class="bg-[#050505] text-white antialiased selection:bg-[#d4af37]/30 selection:text-white min-h-screen">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
