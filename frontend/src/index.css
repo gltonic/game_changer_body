@@ -78,4 +78,12 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+
+  /* iOS PWA Safe Area support */
+  .safe-top-padding {
+    padding-top: max(0.75rem, env(safe-area-inset-top));
+  }
+  .safe-bottom-padding {
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  }
 }

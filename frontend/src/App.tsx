@@ -359,14 +359,14 @@ export function App() {
     <div className="flex flex-col min-h-screen bg-[#050505] text-white selection:bg-[#d4af37]/30">
       {/* Toast popup */}
       {toastMessage && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 max-w-sm w-[90%] bg-zinc-900 border border-[#d4af37]/40 text-white px-4 py-3 rounded-2xl shadow-[0_0_30px_rgba(212,175,55,0.3)] text-xs font-semibold flex items-center gap-2 animate-in slide-in-from-top duration-300">
+        <div className="fixed top-[max(1rem,calc(env(safe-area-inset-top)+0.5rem))] left-1/2 -translate-x-1/2 z-50 max-w-sm w-[90%] bg-zinc-900 border border-[#d4af37]/40 text-white px-4 py-3 rounded-2xl shadow-[0_0_30px_rgba(212,175,55,0.3)] text-xs font-semibold flex items-center gap-2 animate-in slide-in-from-top duration-300">
           <Sparkles size={16} className="text-[#d4af37] shrink-0" />
           <span>{toastMessage}</span>
         </div>
       )}
 
-      {/* Top Header */}
-      <header className="sticky top-0 z-40 bg-[#050505]/95 backdrop-blur-md border-b border-white/5 px-4 py-3">
+      {/* Top Header with iOS Safe Area support */}
+      <header className="sticky top-0 z-40 bg-[#050505]/95 backdrop-blur-md border-b border-white/5 px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3">
         <div className="max-w-md mx-auto flex items-center justify-between">
           <div
             onClick={() => setActiveTab('dashboard')}
@@ -445,7 +445,7 @@ export function App() {
       </header>
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-md mx-auto w-full px-4 flex flex-col items-center">
+      <main className="flex-1 max-w-md mx-auto w-full px-4 flex flex-col items-center pb-[calc(5rem+env(safe-area-inset-bottom))]">
         {activeTab === 'dashboard' ? (
           <MainDashboard
             userDisciplines={userDisciplines}
@@ -500,8 +500,8 @@ export function App() {
         )}
       </main>
 
-      {/* Bottom Sticky Navigation Bar */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-[#050505]/95 backdrop-blur-xl border-t border-white/10 py-2.5 px-4">
+      {/* Bottom Sticky Navigation Bar with iOS Safe Area support */}
+      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-[#050505]/95 backdrop-blur-xl border-t border-white/10 px-4 pt-2.5 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         <div className="max-w-md mx-auto grid grid-cols-3 gap-2">
           <button
             onClick={() => setActiveTab('dashboard')}

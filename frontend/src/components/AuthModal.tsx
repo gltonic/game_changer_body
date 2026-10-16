@@ -44,7 +44,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] bg-black/90 backdrop-blur-md animate-in fade-in duration-200">
       <div className="relative w-full max-w-sm bg-[#0c0c0e] border border-white/10 rounded-3xl p-6 shadow-2xl flex flex-col gap-5">
         <button
           onClick={onClose}

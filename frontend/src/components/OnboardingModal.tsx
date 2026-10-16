@@ -71,7 +71,7 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
   const allDisciplines: Discipline[] = ['pullups', 'pushups', 'plank', 'lsit', 'dumbbells']
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
       <div className="relative w-full max-w-md bg-[#0c0c0e] border border-white/10 rounded-2xl p-6 shadow-2xl flex flex-col gap-5">
         <button
           onClick={onClose}
