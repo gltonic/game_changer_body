@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
 import { Check, Lock, Play, Dumbbell } from 'lucide-react'
-import type { WorkoutSessionPlan, VisualGrade } from '../lib/progression'
+import type { WorkoutSessionPlan } from '../lib/progression'
 
 interface TrailViewProps {
   trail: WorkoutSessionPlan[]
@@ -26,63 +26,16 @@ export const TrailView: React.FC<TrailViewProps> = ({
 
   const getOffsetX = (idx: number) => Math.sin(idx * 0.75) * 60
 
-  const getGradeStyles = (grade: VisualGrade, isCurrent: boolean, isCompleted: boolean) => {
-    if (isCompleted) {
-      return {
-        card: 'bg-zinc-900/60 border-zinc-700/40 text-zinc-400',
-        badge: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20',
-        glow: ''
-      }
-    }
-
-    switch (grade) {
-      case 'stone':
-        return {
-          card: isCurrent
-            ? 'bg-zinc-800 border-zinc-500 shadow-[0_0_20px_rgba(161,161,170,0.3)] ring-2 ring-zinc-400/50'
-            : 'bg-zinc-900 border-zinc-800 text-zinc-400',
-          badge: 'bg-zinc-700/30 text-zinc-300 border border-zinc-600/30',
-          glow: ''
-        }
-      case 'bronze':
-        return {
-          card: isCurrent
-            ? 'bg-gradient-to-b from-amber-950/60 to-zinc-900 border-amber-700 shadow-[0_0_20px_rgba(180,83,9,0.4)] ring-2 ring-amber-500/50'
-            : 'bg-zinc-900/80 border-amber-900/40 text-amber-200/70',
-          badge: 'bg-amber-950/50 text-amber-300 border border-amber-700/40',
-          glow: ''
-        }
-      case 'gold':
-        return {
-          card: isCurrent
-            ? 'bg-gradient-to-b from-yellow-950/70 via-zinc-900 to-zinc-950 border-[#d4af37] shadow-[0_0_25px_rgba(212,175,55,0.45)] ring-2 ring-[#d4af37]/60'
-            : 'bg-zinc-900/80 border-[#d4af37]/40 text-[#d4af37]/70',
-          badge: 'bg-[#d4af37]/10 text-[#d4af37] border border-[#d4af37]/30',
-          glow: ''
-        }
-      case 'inferno':
-        return {
-          card: isCurrent
-            ? 'bg-gradient-to-b from-red-950/80 via-orange-950/60 to-zinc-950 border-orange-500 shadow-[0_0_30px_rgba(249,115,22,0.6)] ring-2 ring-orange-500/80 animate-pulse'
-            : 'bg-zinc-900/80 border-orange-900/50 text-orange-300/70',
-          badge: 'bg-red-950/50 text-orange-400 border border-orange-600/40',
-          glow: ''
-        }
-    }
-  }
-
   return (
     <div className="relative w-full flex flex-col items-center py-8 pb-36">
-      {/* Background connecting progression curve */}
-      <div className="absolute top-12 bottom-32 w-1 bg-gradient-to-b from-zinc-800 via-[#d4af37]/40 to-orange-500/60 -z-10 rounded-full" />
+      {/* Minimal clean connecting progression line (Apple style) */}
+      <div className="absolute top-12 bottom-32 w-1 bg-[#2C2C2E] -z-10 rounded-full" />
 
-      <div className="flex flex-col items-center gap-10 w-full max-w-sm">
+      <div className="flex flex-col items-center gap-8 w-full max-w-sm">
         {trail.map((workout, idx) => {
           const isCompleted = idx < currentWorkoutIndex
           const isCurrent = idx === currentWorkoutIndex
-          const isLocked = idx > currentWorkoutIndex
           const offsetX = getOffsetX(idx)
-          const styles = getGradeStyles(workout.visualGrade, isCurrent, isCompleted)
 
           return (
             <div
@@ -91,66 +44,79 @@ export const TrailView: React.FC<TrailViewProps> = ({
               style={{ transform: `translateX(${offsetX}px)` }}
               className="relative transition-transform duration-300 ease-out"
             >
+              {/* Apple Health style Card: borderless, solid #1C1C1E, rounded-3xl */}
               <div
-                className={`w-48 rounded-2xl p-4 border transition-all duration-300 flex flex-col gap-2 ${
-                  styles.card
-                } ${isCurrent ? 'scale-105' : ''} ${isLocked ? 'opacity-50' : ''}`}
+                className={`w-52 rounded-3xl p-5 transition-all duration-200 flex flex-col gap-3.5 ${
+                  isCurrent
+                    ? 'bg-[#1C1C1E] scale-105 shadow-xl'
+                    : isCompleted
+                    ? 'bg-[#1C1C1E]/80'
+                    : 'bg-[#1C1C1E]/50 opacity-60'
+                }`}
               >
-                {/* Header row */}
+                {/* Header row: Workout index & Grade */}
                 <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-mono font-bold tracking-wider uppercase text-zinc-400">
+                  <span className="text-xs font-semibold text-[#8E8E93]">
                     Тренировка #{workout.workoutIndex}
                   </span>
-                  <div className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${styles.badge}`}>
+                  <div
+                    className={`px-2.5 py-0.5 rounded-full text-[10px] font-semibold tracking-wide ${
+                      isCompleted
+                        ? 'bg-[#30D158]/15 text-[#30D158]'
+                        : isCurrent
+                        ? 'bg-[#FF9F0A]/15 text-[#FF9F0A]'
+                        : 'bg-[#2C2C2E] text-[#8E8E93]'
+                    }`}
+                  >
                     {workout.visualGrade.toUpperCase()}
                   </div>
                 </div>
 
                 {/* Sets preview */}
-                <div className="flex items-center justify-between my-1">
-                  <div className="flex items-center gap-1">
+                <div className="flex items-center justify-between my-0.5">
+                  <div className="flex items-center gap-1.5 flex-wrap">
                     {workout.sets.map((set, setIdx) => (
                       <span
                         key={setIdx}
-                        className={`text-xs font-mono font-semibold px-1 py-0.5 rounded ${
+                        className={`text-xs font-bold px-2 py-1 rounded-xl ${
                           isCompleted
-                            ? 'bg-emerald-500/10 text-emerald-400'
+                            ? 'bg-[#30D158]/15 text-[#30D158]'
                             : isCurrent
-                            ? 'bg-[#d4af37]/15 text-[#d4af37]'
-                            : 'bg-zinc-800 text-zinc-400'
+                            ? 'bg-[#2C2C2E] text-white'
+                            : 'bg-[#2C2C2E]/60 text-[#8E8E93]'
                         }`}
                       >
                         {set}
                       </span>
                     ))}
                   </div>
-                  <span className="text-[10px] text-zinc-400 font-mono">
+                  <span className="text-xs text-[#8E8E93] font-medium shrink-0">
                     {workout.unit === 'seconds' ? 'сек' : 'повт'}
                   </span>
                 </div>
 
                 {workout.weightKg && (
-                  <div className="flex items-center gap-1 text-[11px] text-zinc-400 font-mono">
-                    <Dumbbell size={12} className="text-[#d4af37]" />
+                  <div className="flex items-center gap-1.5 text-xs text-[#8E8E93] font-medium">
+                    <Dumbbell size={13} className="text-[#FF9F0A]" />
                     <span>{workout.weightKg} кг</span>
                   </div>
                 )}
 
-                {/* Action button */}
+                {/* Action CTA Button */}
                 <div className="mt-1">
                   {isCompleted ? (
-                    <div className="w-full py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold flex items-center justify-center gap-1.5">
-                      <Check size={14} /> Выполнено
+                    <div className="w-full py-2.5 rounded-full bg-[#30D158]/15 text-[#30D158] text-xs font-semibold flex items-center justify-center gap-1.5">
+                      <Check size={14} strokeWidth={2.5} /> Выполнено
                     </div>
                   ) : isCurrent ? (
                     <button
                       onClick={() => onStartWorkout(workout)}
-                      className="w-full py-2 rounded-xl bg-gradient-to-r from-[#d4af37] to-amber-600 hover:from-amber-400 hover:to-amber-600 text-black font-extrabold text-xs tracking-wider flex items-center justify-center gap-1.5 shadow-[0_0_15px_rgba(212,175,55,0.4)] transition-all cursor-pointer active:scale-95"
+                      className="w-full py-2.5 rounded-full bg-white hover:bg-zinc-200 text-black font-bold text-xs tracking-tight flex items-center justify-center gap-1.5 transition-all cursor-pointer active:scale-95"
                     >
-                      <Play size={14} fill="currentColor" /> Начать
+                      <Play size={13} fill="currentColor" /> Начать
                     </button>
                   ) : (
-                    <div className="w-full py-1.5 rounded-lg bg-zinc-950/80 border border-white/5 text-zinc-400 text-xs font-semibold flex items-center justify-center gap-1.5">
+                    <div className="w-full py-2.5 rounded-full bg-[#2C2C2E] text-[#8E8E93] text-xs font-medium flex items-center justify-center gap-1.5">
                       <Lock size={12} /> Заблокировано
                     </div>
                   )}
@@ -163,3 +129,4 @@ export const TrailView: React.FC<TrailViewProps> = ({
     </div>
   )
 }
+export default TrailView

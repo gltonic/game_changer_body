@@ -26,7 +26,7 @@ export const DisciplineBar: React.FC<DisciplineBarProps> = ({
   const disciplines: Discipline[] = ['pullups', 'pushups', 'plank', 'lsit', 'dumbbells']
 
   return (
-    <div className="w-full overflow-x-auto no-scrollbar py-2 px-1">
+    <div className="w-full overflow-x-auto no-scrollbar py-1">
       <div className="flex items-center gap-2 min-w-max">
         {disciplines.map((d) => {
           const meta = DISCIPLINES_META[d]
@@ -40,18 +40,18 @@ export const DisciplineBar: React.FC<DisciplineBarProps> = ({
             <button
               key={d}
               onClick={() => onSelect(d)}
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl transition-all duration-200 border cursor-pointer ${
+              className={`flex items-center gap-2.5 px-4 py-2.5 rounded-2xl transition-all duration-200 cursor-pointer ${
                 isSelected
-                  ? 'bg-gradient-to-r from-zinc-800 to-zinc-900 border-[#d4af37]/60 text-white shadow-[0_0_15px_rgba(212,175,55,0.25)]'
-                  : 'bg-zinc-950/70 border-white/5 text-zinc-400 hover:text-white hover:border-white/10'
+                  ? 'bg-white text-black font-bold'
+                  : 'bg-[#1C1C1E] text-[#8E8E93] hover:text-white font-medium'
               }`}
             >
-              <span className="text-lg">{meta.icon}</span>
+              <span className="text-base">{meta.icon}</span>
               <div className="flex flex-col text-left">
-                <span className="text-xs font-semibold leading-tight">{meta.label}</span>
+                <span className="text-xs leading-tight tracking-tight">{meta.label}</span>
                 <span
-                  className={`text-[10px] font-mono leading-none mt-0.5 ${
-                    isSelected ? 'text-[#d4af37]' : 'text-zinc-400'
+                  className={`text-[10px] mt-0.5 leading-none ${
+                    isSelected ? 'text-zinc-600 font-semibold' : 'text-[#8E8E93]'
                   }`}
                 >
                   {progressText}
@@ -64,3 +64,4 @@ export const DisciplineBar: React.FC<DisciplineBarProps> = ({
     </div>
   )
 }
+export default DisciplineBar

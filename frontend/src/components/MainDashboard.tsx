@@ -59,83 +59,81 @@ export const MainDashboard: React.FC<MainDashboardProps> = ({
   const totalStreakDays = totalCompleted > 0 ? Math.min(totalCompleted + 1, 14) : 0
 
   return (
-    <div className="flex flex-col gap-6 w-full max-w-md mx-auto py-4 pb-28 animate-in fade-in duration-300">
-      {/* 1. Header Hero Card: Streak & Stats */}
-      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-zinc-900 via-zinc-950 to-black border border-white/10 p-5 shadow-[0_0_30px_rgba(0,0,0,0.8)]">
-        <div className="absolute top-0 right-0 w-44 h-44 bg-[#d4af37]/10 rounded-full blur-3xl pointer-events-none" />
-
-        <div className="flex justify-between items-center relative z-10">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-[#d4af37]/15 border border-[#d4af37]/40 flex items-center justify-center text-[#d4af37] shadow-[0_0_20px_rgba(212,175,55,0.3)]">
+    <div className="flex flex-col gap-6 w-full max-w-md mx-auto py-5 pb-32 animate-in fade-in duration-300">
+      {/* 1. Header Hero Card: Streak & Stats (Apple Health Style) */}
+      <section className="rounded-3xl bg-[#1C1C1E] p-6 flex flex-col gap-5">
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-3.5">
+            <div className="w-12 h-12 rounded-full bg-[#FF9F0A]/15 text-[#FF9F0A] flex items-center justify-center">
               <Trophy size={22} />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#d4af37]">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-[#8E8E93]">
                   ПРОФИЛЬ
                 </span>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/10 text-zinc-300 font-semibold">
-                  {totalCompleted >= 20 ? 'Мастер силы' : totalCompleted >= 5 ? 'Атлет' : 'Новичок'}
+                <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-[#2C2C2E] text-[#8E8E93] font-medium">
+                  {totalCompleted >= 20 ? 'Мастер' : totalCompleted >= 5 ? 'Атлет' : 'Новичок'}
                 </span>
               </div>
-              <h2 className="text-base font-extrabold text-white mt-0.5">
+              <h2 className="text-xl font-bold text-white tracking-tight mt-0.5">
                 Game Changer: Body
               </h2>
             </div>
           </div>
 
           {/* Streak Counter */}
-          <div className="flex flex-col items-end">
-            <div className="flex items-center gap-1.5 bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-orange-500/40 px-3 py-1 rounded-2xl shadow-[0_0_15px_rgba(249,115,22,0.25)]">
-              <Flame size={16} className="text-orange-400 fill-orange-400 animate-pulse" />
-              <span className="font-mono font-black text-sm text-white">
+          <div className="flex items-center gap-2 bg-[#2C2C2E] px-3.5 py-2 rounded-2xl">
+            <Flame size={18} className="text-[#FF453A] fill-[#FF453A]" />
+            <div className="flex flex-col items-start leading-none">
+              <span className="font-bold text-sm text-white">
                 {totalStreakDays} {totalStreakDays === 1 ? 'день' : 'дней'}
               </span>
+              <span className="text-[10px] text-[#8E8E93] mt-0.5 font-medium">
+                Стрик
+              </span>
             </div>
-            <span className="text-[9px] font-mono text-zinc-400 mt-1 uppercase tracking-wider">
-              Текущий стрик
-            </span>
           </div>
         </div>
 
-        {/* Quick summary counters */}
-        <div className="grid grid-cols-2 gap-2 mt-4 pt-4 border-t border-white/5">
-          <div className="bg-zinc-900/60 rounded-xl p-2.5 border border-white/5 flex flex-col">
-            <span className="text-[10px] font-mono text-zinc-400 uppercase">Закрыто тренировок</span>
-            <span className="text-xl font-mono font-black text-[#d4af37] mt-0.5">
+        {/* Summary metric tiles */}
+        <div className="grid grid-cols-2 gap-3 pt-2">
+          <div className="bg-[#2C2C2E] rounded-2xl p-4 flex flex-col">
+            <span className="text-xs text-[#8E8E93] font-medium">Закрыто тренировок</span>
+            <span className="text-2xl font-bold text-white tracking-tight mt-1">
               {totalCompleted}
             </span>
           </div>
-          <div className="bg-zinc-900/60 rounded-xl p-2.5 border border-white/5 flex flex-col">
-            <span className="text-[10px] font-mono text-zinc-400 uppercase">Активных троп</span>
-            <span className="text-xl font-mono font-black text-white mt-0.5">
-              {activeEntries.length} / 5
+          <div className="bg-[#2C2C2E] rounded-2xl p-4 flex flex-col">
+            <span className="text-xs text-[#8E8E93] font-medium">Активных троп</span>
+            <span className="text-2xl font-bold text-white tracking-tight mt-1">
+              {activeEntries.length} <span className="text-sm font-normal text-[#8E8E93]">/ 5</span>
             </span>
           </div>
         </div>
       </section>
 
-      {/* 2. Notifications Quick Center Banner */}
-      <section className="rounded-2xl bg-gradient-to-r from-zinc-900 via-zinc-900 to-zinc-950 border border-white/10 p-4 flex items-center justify-between shadow-lg">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#d4af37]/10 border border-[#d4af37]/30 flex items-center justify-center text-[#d4af37]">
-            <Bell size={18} />
+      {/* 2. Notifications Center Banner */}
+      <section className="rounded-3xl bg-[#1C1C1E] p-5 flex items-center justify-between">
+        <div className="flex items-center gap-3.5">
+          <div className="w-11 h-11 rounded-full bg-[#0A84FF]/15 text-[#0A84FF] flex items-center justify-center">
+            <Bell size={20} />
           </div>
           <div className="flex flex-col">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-white">Push-Уведомления</span>
+              <span className="text-sm font-bold text-white tracking-tight">Уведомления</span>
               <span
-                className={`text-[9px] font-mono font-bold px-1.5 py-0.2 rounded ${
+                className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
                   isPushActive
-                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                    : 'bg-zinc-800 text-zinc-400'
+                    ? 'bg-[#30D158]/15 text-[#30D158]'
+                    : 'bg-[#2C2C2E] text-[#8E8E93]'
                 }`}
               >
-                {isPushActive ? 'АКТИВНЫ' : 'НЕ ВКЛЮЧЕНЫ'}
+                {isPushActive ? 'Активны' : 'Отключены'}
               </span>
             </div>
-            <span className="text-[11px] text-zinc-400 mt-0.5">
-              Персональные напоминания о микротренировках
+            <span className="text-xs text-[#8E8E93] mt-0.5">
+              Напоминания о микротренировках
             </span>
           </div>
         </div>
@@ -144,13 +142,14 @@ export const MainDashboard: React.FC<MainDashboardProps> = ({
           <button
             onClick={onSendTestNotification}
             title="Отправить тестовый пуш"
-            className="p-2 rounded-xl bg-zinc-800 border border-white/10 hover:border-[#d4af37]/40 text-[#d4af37] transition-all cursor-pointer active:scale-95"
+            className="w-9 h-9 rounded-full bg-[#2C2C2E] hover:bg-[#3A3A3C] text-white flex items-center justify-center transition-colors cursor-pointer active:scale-95"
           >
             <Send size={15} />
           </button>
+
           <button
             onClick={onOpenNotifications}
-            className="px-3 py-1.5 rounded-xl bg-[#d4af37]/15 hover:bg-[#d4af37]/25 border border-[#d4af37]/30 text-[#d4af37] text-xs font-bold transition-all cursor-pointer"
+            className="px-4 py-2 rounded-full bg-[#2C2C2E] hover:bg-[#3A3A3C] text-white text-xs font-semibold transition-colors cursor-pointer active:scale-95"
           >
             Настроить
           </button>
@@ -158,45 +157,45 @@ export const MainDashboard: React.FC<MainDashboardProps> = ({
       </section>
 
       {/* 3. Active Trails & Streaks Section */}
-      <section className="flex flex-col gap-3">
+      <section className="flex flex-col gap-4">
         <div className="flex items-center justify-between px-1">
           <div>
-            <h3 className="text-sm font-extrabold uppercase tracking-wider text-white">
-              Тропы и Стрики
+            <h3 className="text-xl font-bold text-white tracking-tight">
+              Тропы
             </h3>
-            <p className="text-[11px] text-zinc-400">
-              Твой параллельный прогресс по дисциплинам
+            <p className="text-xs text-[#8E8E93] mt-0.5">
+              Прогресс по дисциплинам
             </p>
           </div>
           <button
             onClick={() => onOpenCreateTrail()}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#d4af37] to-amber-600 hover:from-amber-400 hover:to-amber-600 text-black font-extrabold text-xs shadow-[0_0_15px_rgba(212,175,55,0.3)] transition-all cursor-pointer active:scale-95"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-white text-black font-semibold text-xs tracking-tight hover:bg-zinc-200 transition-all cursor-pointer active:scale-95"
           >
-            <Plus size={14} />
+            <Plus size={15} />
             <span>Новая тропа</span>
           </button>
         </div>
 
         {activeEntries.length === 0 ? (
-          <div className="rounded-3xl bg-zinc-950 border border-white/10 p-8 text-center flex flex-col items-center gap-4">
-            <div className="w-16 h-16 rounded-2xl bg-zinc-900 border border-white/10 flex items-center justify-center text-3xl">
+          <div className="rounded-3xl bg-[#1C1C1E] p-8 text-center flex flex-col items-center gap-4">
+            <div className="w-16 h-16 rounded-full bg-[#2C2C2E] flex items-center justify-center text-3xl">
               🎯
             </div>
             <div>
-              <h4 className="text-sm font-bold text-white">Нет активных троп</h4>
-              <p className="text-xs text-zinc-400 mt-1 max-w-xs">
-                Создай свою первую тропу: укажи свой текущий рекорд и начни серию тренировок.
+              <h4 className="text-base font-bold text-white tracking-tight">Нет активных троп</h4>
+              <p className="text-xs text-[#8E8E93] mt-1.5 max-w-xs leading-relaxed">
+                Создайте свою первую тропу: укажите текущий рекорд и начните серию тренировок.
               </p>
             </div>
             <button
               onClick={() => onOpenCreateTrail()}
-              className="px-6 py-3 rounded-2xl bg-gradient-to-r from-[#d4af37] to-amber-600 text-black font-black text-xs tracking-wider flex items-center gap-2 shadow-[0_0_20px_rgba(212,175,55,0.4)] cursor-pointer active:scale-95"
+              className="px-6 py-3 rounded-2xl bg-white text-black font-semibold text-xs tracking-tight flex items-center gap-2 hover:bg-zinc-200 cursor-pointer active:scale-95 transition-all"
             >
               <Sparkles size={16} /> Создать первую тропу
             </button>
           </div>
         ) : (
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-4">
             {activeEntries.map(([discKey, data]) => {
               const disc = discKey as Discipline
               const meta = DISCIPLINES_META[disc]
@@ -209,25 +208,25 @@ export const MainDashboard: React.FC<MainDashboardProps> = ({
               return (
                 <div
                   key={discKey}
-                  className="rounded-3xl bg-gradient-to-b from-zinc-900/90 to-zinc-950 border border-white/10 p-5 shadow-lg flex flex-col gap-4 hover:border-white/20 transition-all"
+                  className="rounded-3xl bg-[#1C1C1E] p-6 flex flex-col gap-5 transition-all"
                 >
                   {/* Top card row */}
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-2xl bg-zinc-800 border border-white/10 flex items-center justify-center text-2xl shadow-inner">
+                    <div className="flex items-center gap-3.5">
+                      <div className="w-12 h-12 rounded-full bg-[#2C2C2E] flex items-center justify-center text-2xl">
                         {meta.icon}
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <h4 className="text-sm font-black text-white">{meta.label}</h4>
+                          <h4 className="text-base font-bold text-white tracking-tight">{meta.label}</h4>
                           {data.weight_kg && (
-                            <span className="text-[10px] font-mono text-zinc-400 flex items-center gap-0.5">
-                              <Dumbbell size={10} className="text-[#d4af37]" />
+                            <span className="text-[11px] font-medium text-[#8E8E93] flex items-center gap-1 bg-[#2C2C2E] px-2 py-0.5 rounded-full">
+                              <Dumbbell size={11} className="text-[#FF9F0A]" />
                               {data.weight_kg} кг
                             </span>
                           )}
                         </div>
-                        <span className="text-[11px] font-mono text-[#d4af37] font-semibold">
+                        <span className="text-xs text-[#8E8E93] font-medium mt-0.5 block">
                           Тренировка {Math.min(currentIdx + 1, total)} из {total} ({pct}%)
                         </span>
                       </div>
@@ -235,34 +234,32 @@ export const MainDashboard: React.FC<MainDashboardProps> = ({
 
                     <button
                       onClick={() => onOpenTrailView(disc)}
-                      className="p-2 rounded-xl bg-zinc-800/80 border border-white/10 text-zinc-300 hover:text-white hover:border-[#d4af37]/40 transition-colors flex items-center gap-1 text-xs font-mono"
+                      className="px-3.5 py-1.5 rounded-full bg-[#2C2C2E] hover:bg-[#3A3A3C] text-white transition-colors flex items-center gap-1.5 text-xs font-semibold cursor-pointer"
                       title="Открыть карту тропы"
                     >
-                      <Map size={14} className="text-[#d4af37]" />
-                      <span className="text-[11px]">Карта</span>
+                      <Map size={14} className="text-[#0A84FF]" />
+                      <span>Карта</span>
                     </button>
                   </div>
 
-                  {/* Progress Bar */}
-                  <div className="flex flex-col gap-1.5">
-                    <div className="w-full bg-zinc-800 h-2.5 rounded-full overflow-hidden p-0.5">
-                      <div
-                        className="bg-gradient-to-r from-amber-600 to-[#d4af37] h-full rounded-full transition-all duration-500 shadow-[0_0_10px_rgba(212,175,55,0.5)]"
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
+                  {/* Activity Progress Bar (Solid iOS Health style) */}
+                  <div className="w-full bg-[#2C2C2E] h-2.5 rounded-full overflow-hidden">
+                    <div
+                      className="bg-[#FF9F0A] h-full rounded-full transition-all duration-500"
+                      style={{ width: `${pct}%` }}
+                    />
                   </div>
 
-                  {/* Next workout preview and actions */}
+                  {/* Next workout preview and action */}
                   {nextWorkout && !isCompletedAll ? (
-                    <div className="flex items-center justify-between bg-zinc-950/80 rounded-2xl p-3 border border-white/5">
+                    <div className="flex items-center justify-between bg-[#2C2C2E] rounded-2xl p-4">
                       <div className="flex flex-col">
-                        <span className="text-[10px] font-mono text-zinc-400 uppercase">
+                        <span className="text-[11px] font-semibold text-[#8E8E93] uppercase tracking-wider">
                           Следующая тренировка #{nextWorkout.workoutIndex}
                         </span>
-                        <div className="flex items-center gap-1 mt-0.5 text-xs font-mono font-bold text-white">
+                        <div className="flex items-center gap-1.5 mt-1 text-sm font-bold text-white">
                           <span>5 подходов:</span>
-                          <span className="text-[#d4af37]">
+                          <span className="text-[#FF9F0A]">
                             {nextWorkout.sets.join('-')} {nextWorkout.unit === 'seconds' ? 'сек' : 'повт'}
                           </span>
                         </div>
@@ -270,21 +267,21 @@ export const MainDashboard: React.FC<MainDashboardProps> = ({
 
                       <button
                         onClick={() => onStartWorkout(nextWorkout)}
-                        className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#d4af37] to-amber-600 hover:from-amber-400 hover:to-amber-600 text-black font-black text-xs tracking-wider flex items-center gap-1.5 shadow-[0_0_15px_rgba(212,175,55,0.35)] transition-all cursor-pointer active:scale-95"
+                        className="px-5 py-2.5 rounded-full bg-white hover:bg-zinc-200 text-black font-bold text-xs tracking-tight flex items-center gap-1.5 transition-all cursor-pointer active:scale-95"
                       >
-                        <Play size={14} fill="currentColor" />
+                        <Play size={13} fill="currentColor" />
                         <span>Начать</span>
                       </button>
                     </div>
                   ) : (
-                    <div className="flex items-center justify-between bg-emerald-950/30 rounded-2xl p-3 border border-emerald-500/20 text-emerald-300 text-xs font-bold">
+                    <div className="flex items-center justify-between bg-[#2C2C2E] rounded-2xl p-4 text-[#30D158] text-xs font-bold">
                       <div className="flex items-center gap-2">
-                        <CheckCircle2 size={16} />
+                        <CheckCircle2 size={18} />
                         <span>Тропа полностью завершена!</span>
                       </div>
                       <button
                         onClick={() => onOpenCreateTrail(disc)}
-                        className="px-3 py-1.5 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-200 text-xs font-bold"
+                        className="px-3.5 py-1.5 rounded-full bg-[#30D158]/15 text-[#30D158] hover:bg-[#30D158]/25 text-xs font-semibold transition-colors"
                       >
                         Новый цикл
                       </button>
@@ -300,32 +297,34 @@ export const MainDashboard: React.FC<MainDashboardProps> = ({
       {/* 4. Workout History Log Section */}
       {workoutHistory && workoutHistory.length > 0 && (
         <section className="flex flex-col gap-3 pt-2">
-          <h3 className="text-sm font-extrabold uppercase tracking-wider text-white px-1">
+          <h3 className="text-xl font-bold text-white tracking-tight px-1">
             Недавние тренировки
           </h3>
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2.5">
             {workoutHistory.slice(0, 4).map((item, idx) => {
               const meta = DISCIPLINES_META[item.discipline as Discipline]
               return (
                 <div
                   key={idx}
-                  className="rounded-2xl bg-zinc-900/60 border border-white/5 p-3 flex items-center justify-between text-xs font-mono"
+                  className="rounded-2xl bg-[#1C1C1E] p-4 flex items-center justify-between text-xs"
                 >
-                  <div className="flex items-center gap-2.5">
-                    <span className="text-lg">{meta?.icon || '⚡'}</span>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-[#2C2C2E] flex items-center justify-center text-lg">
+                      {meta?.icon || '⚡'}
+                    </div>
                     <div className="flex flex-col">
-                      <span className="font-bold text-white">{meta?.label || item.discipline}</span>
-                      <span className="text-[10px] text-zinc-400">
+                      <span className="font-bold text-white text-sm">{meta?.label || item.discipline}</span>
+                      <span className="text-xs text-[#8E8E93] mt-0.5">
                         {item.completed_at ? new Date(item.completed_at).toLocaleDateString() : 'Сегодня'}
                       </span>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <span className="text-[#d4af37] font-bold">
+                  <div className="flex items-center gap-3">
+                    <span className="text-white font-bold text-sm">
                       {Array.isArray(item.completed_sets) ? item.completed_sets.join('-') : ''}
                     </span>
-                    <span className="text-[10px] uppercase px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300">
+                    <span className="text-[11px] px-2.5 py-1 rounded-full bg-[#2C2C2E] text-[#8E8E93] font-medium">
                       {item.feedback === 'easy' ? 'Легко' : item.feedback === 'death' ? 'Смерть' : 'Норм'}
                     </span>
                   </div>

@@ -356,31 +356,31 @@ export function App() {
   const currentProgram = userDisciplines[currentDiscipline]
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#050505] text-white selection:bg-[#d4af37]/30">
-      {/* Toast popup */}
+    <div className="flex flex-col min-h-screen bg-black text-white selection:bg-white/20">
+      {/* Toast popup (iOS style notification banner) */}
       {toastMessage && (
-        <div className="fixed top-[max(1rem,calc(env(safe-area-inset-top)+0.5rem))] left-1/2 -translate-x-1/2 z-50 max-w-sm w-[90%] bg-zinc-900 border border-[#d4af37]/40 text-white px-4 py-3 rounded-2xl shadow-[0_0_30px_rgba(212,175,55,0.3)] text-xs font-semibold flex items-center gap-2 animate-in slide-in-from-top duration-300">
-          <Sparkles size={16} className="text-[#d4af37] shrink-0" />
+        <div className="fixed top-[max(1rem,calc(env(safe-area-inset-top)+0.5rem))] left-1/2 -translate-x-1/2 z-50 max-w-sm w-[90%] bg-[#1C1C1E] text-white px-4 py-3 rounded-2xl shadow-2xl text-xs font-semibold flex items-center gap-2.5 animate-in slide-in-from-top duration-300">
+          <Sparkles size={16} className="text-[#FF9F0A] shrink-0" />
           <span>{toastMessage}</span>
         </div>
       )}
 
       {/* Top Header with iOS Safe Area support */}
-      <header className="sticky top-0 z-40 bg-[#050505]/95 backdrop-blur-md border-b border-white/5 px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3">
+      <header className="sticky top-0 z-40 bg-black/80 backdrop-blur-xl border-b border-white/5 px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3">
         <div className="max-w-md mx-auto flex items-center justify-between">
           <div
             onClick={() => setActiveTab('dashboard')}
-            className="flex items-center gap-2 cursor-pointer"
+            className="flex items-center gap-2.5 cursor-pointer"
           >
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-[#d4af37] to-amber-600 flex items-center justify-center text-black font-black text-sm shadow-[0_0_10px_rgba(212,175,55,0.4)]">
+            <div className="w-8 h-8 rounded-xl bg-[#1C1C1E] flex items-center justify-center text-white font-bold text-xs tracking-tight">
               GC
             </div>
             <div>
-              <h1 className="text-xs font-black tracking-widest uppercase text-white">
+              <h1 className="text-xs font-bold tracking-tight uppercase text-white">
                 Game Changer
               </h1>
-              <span className="text-[10px] font-mono font-bold text-[#d4af37] tracking-wider uppercase block -mt-0.5">
-                Body • PWA
+              <span className="text-[10px] text-[#8E8E93] tracking-wide uppercase block -mt-0.5 font-medium">
+                Body
               </span>
             </div>
           </div>
@@ -389,7 +389,7 @@ export function App() {
             {installPrompt && (
               <button
                 onClick={handleInstallClick}
-                className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-zinc-900 border border-[#d4af37]/30 text-[#d4af37] text-xs font-semibold hover:bg-zinc-800 transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#1C1C1E] hover:bg-[#2C2C2E] text-white text-xs font-semibold transition-colors"
               >
                 <Download size={13} />
                 <span>Установить</span>
@@ -398,23 +398,23 @@ export function App() {
 
             <button
               onClick={() => setIsNotificationsOpen(true)}
-              className="p-2 rounded-full bg-zinc-900 border border-white/10 hover:border-[#d4af37]/40 text-zinc-300 hover:text-white transition-colors relative"
+              className="p-2.5 rounded-full bg-[#1C1C1E] hover:bg-[#2C2C2E] text-white transition-colors relative"
               title="Центр уведомлений"
             >
-              <Bell size={14} className={isPushActive ? 'text-[#d4af37]' : ''} />
+              <Bell size={15} className={isPushActive ? 'text-[#0A84FF]' : 'text-[#8E8E93]'} />
               {isPushActive && (
-                <span className="absolute top-1 right-1 w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#30D158] rounded-full" />
               )}
             </button>
 
             {currentUser ? (
-              <div className="flex items-center gap-1.5 bg-zinc-900/90 border border-white/10 rounded-full px-2.5 py-1 text-xs">
-                <span className="text-[11px] text-zinc-300 font-mono truncate max-w-[90px]">
+              <div className="flex items-center gap-1.5 bg-[#1C1C1E] rounded-full px-3 py-1.5 text-xs">
+                <span className="text-[11px] text-[#8E8E93] font-medium truncate max-w-[90px]">
                   {currentUser.email?.split('@')[0]}
                 </span>
                 <button
                   onClick={() => signOut()}
-                  className="text-zinc-400 hover:text-red-400 transition-colors ml-0.5"
+                  className="text-[#8E8E93] hover:text-[#FF453A] transition-colors ml-0.5"
                   title="Выйти"
                 >
                   <LogOut size={13} />
@@ -423,9 +423,9 @@ export function App() {
             ) : (
               <button
                 onClick={() => setIsAuthOpen(true)}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-gradient-to-r from-zinc-800 to-zinc-900 border border-white/10 text-xs font-semibold hover:border-[#d4af37]/50 transition-colors"
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#1C1C1E] hover:bg-[#2C2C2E] text-white text-xs font-semibold transition-colors"
               >
-                <User size={13} className="text-[#d4af37]" />
+                <User size={13} className="text-[#8E8E93]" />
                 <span>Войти</span>
               </button>
             )}
@@ -501,42 +501,42 @@ export function App() {
       </main>
 
       {/* Bottom Sticky Navigation Bar with iOS Safe Area support */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-[#050505]/95 backdrop-blur-xl border-t border-white/10 px-4 pt-2.5 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-black/85 backdrop-blur-2xl border-t border-white/5 px-4 pt-2 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         <div className="max-w-md mx-auto grid grid-cols-3 gap-2">
           <button
             onClick={() => setActiveTab('dashboard')}
-            className={`flex flex-col items-center justify-center py-1.5 rounded-2xl transition-all cursor-pointer ${
+            className={`flex flex-col items-center justify-center py-2 rounded-2xl transition-all cursor-pointer ${
               activeTab === 'dashboard'
-                ? 'text-[#d4af37] bg-white/5 font-bold shadow-[0_0_15px_rgba(212,175,55,0.15)]'
-                : 'text-zinc-400 hover:text-white'
+                ? 'text-white bg-[#1C1C1E] font-semibold'
+                : 'text-[#8E8E93] hover:text-white'
             }`}
           >
             <LayoutDashboard size={20} />
-            <span className="text-[10px] font-mono mt-1 tracking-wider uppercase">
+            <span className="text-[11px] mt-1 font-medium tracking-tight">
               Главная
             </span>
           </button>
 
           <button
             onClick={() => setActiveTab('trails')}
-            className={`flex flex-col items-center justify-center py-1.5 rounded-2xl transition-all cursor-pointer ${
+            className={`flex flex-col items-center justify-center py-2 rounded-2xl transition-all cursor-pointer ${
               activeTab === 'trails'
-                ? 'text-[#d4af37] bg-white/5 font-bold shadow-[0_0_15px_rgba(212,175,55,0.15)]'
-                : 'text-zinc-400 hover:text-white'
+                ? 'text-white bg-[#1C1C1E] font-semibold'
+                : 'text-[#8E8E93] hover:text-white'
             }`}
           >
             <Map size={20} />
-            <span className="text-[10px] font-mono mt-1 tracking-wider uppercase">
+            <span className="text-[11px] mt-1 font-medium tracking-tight">
               Тропы
             </span>
           </button>
 
           <button
             onClick={() => setIsNotificationsOpen(true)}
-            className="flex flex-col items-center justify-center py-1.5 rounded-2xl text-zinc-400 hover:text-white transition-all cursor-pointer"
+            className="flex flex-col items-center justify-center py-2 rounded-2xl text-[#8E8E93] hover:text-white transition-all cursor-pointer"
           >
             <Bell size={20} />
-            <span className="text-[10px] font-mono mt-1 tracking-wider uppercase">
+            <span className="text-[11px] mt-1 font-medium tracking-tight">
               Уведомления
             </span>
           </button>

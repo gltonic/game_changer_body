@@ -68,7 +68,11 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    background-color: #000000;
+    color: #FFFFFF;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
   
   .no-scrollbar::-webkit-scrollbar {
