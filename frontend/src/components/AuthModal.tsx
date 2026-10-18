@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { LogIn, UserPlus, KeyRound, Mail, AlertCircle, X, Shield } from 'lucide-react'
+import { LogIn, UserPlus, Mail, AlertCircle, X, Shield, Lock } from 'lucide-react'
 import { signInWithEmail, signUpWithEmail } from '../lib/auth'
 
 interface AuthModalProps {
@@ -37,45 +37,81 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
         }
       }
     } catch (err: any) {
-      setErrorMessage(err.message || 'Ошибка аутентификации. Проверьте данные.')
+      setErrorMessage(err.message || 'Ошибка аутентификации. Проверьте введённые данные.')
     } finally {
       setIsLoading(false)
     }
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] bg-black/90 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-sm bg-[#0c0c0e] border border-white/10 rounded-3xl p-6 shadow-2xl flex flex-col gap-5">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] bg-black/85 backdrop-blur-2xl animate-in fade-in duration-200">
+      {/* iOS style modal surface: borderless, solid #1C1C1E */}
+      <div className="relative w-full max-w-sm bg-[#1C1C1E] rounded-3xl p-6 shadow-2xl flex flex-col gap-5">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-zinc-400 hover:text-white transition-colors"
+          className="absolute top-5 right-5 text-[#8E8E93] hover:text-white transition-colors p-2 rounded-full hover:bg-[#2C2C2E] cursor-pointer"
         >
-          <X size={20} />
+          <X size={18} />
         </button>
 
-        <div className="flex flex-col items-center text-center">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#d4af37]/20 to-amber-900/10 border border-[#d4af37]/30 flex items-center justify-center text-[#d4af37] shadow-[0_0_15px_rgba(212,175,55,0.2)] mb-2">
-            <Shield size={24} />
+        {/* Header */}
+        <div className="flex flex-col items-center text-center mt-1">
+          <div className="w-14 h-14 rounded-full bg-[#0A84FF]/15 text-[#0A84FF] flex items-center justify-center mb-3">
+            <Shield size={26} />
           </div>
-          <h3 className="text-lg font-extrabold text-white">
-            {isSignUp ? 'Регистрация' : 'Вход в Game Changer'}
+          <h3 className="text-xl font-bold text-white tracking-tight">
+            Game Changer
           </h3>
-          <p className="text-xs text-zinc-400 mt-0.5">
-            Сохраняй прогресс и получай персональные напоминания
+          <p className="text-xs text-[#8E8E93] mt-1 max-w-[240px] leading-relaxed">
+            Синхронизация прогресса, троп и персональных уведомлений
           </p>
         </div>
 
+        {/* Segmented iOS control: Войти / Регистрация */}
+        <div className="bg-[#2C2C2E] p-1 rounded-2xl grid grid-cols-2 gap-1">
+          <button
+            type="button"
+            onClick={() => {
+              setIsSignUp(false)
+              setErrorMessage(null)
+            }}
+            className={`py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+              !isSignUp
+                ? 'bg-white text-black shadow-sm'
+                : 'text-[#8E8E93] hover:text-white'
+            }`}
+          >
+            Войти
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setIsSignUp(true)
+              setErrorMessage(null)
+            }}
+            className={`py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+              isSignUp
+                ? 'bg-white text-black shadow-sm'
+                : 'text-[#8E8E93] hover:text-white'
+            }`}
+          >
+            Регистрация
+          </button>
+        </div>
+
+        {/* Error notification banner */}
         {errorMessage && (
-          <div className="flex items-center gap-2 p-3 rounded-xl bg-red-950/50 border border-red-500/30 text-red-400 text-xs">
+          <div className="flex items-center gap-2.5 p-3.5 rounded-2xl bg-[#FF453A]/15 text-[#FF453A] text-xs font-medium animate-in fade-in">
             <AlertCircle size={16} className="shrink-0" />
             <span>{errorMessage}</span>
           </div>
         )}
 
+        {/* Form Inputs */}
         <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-semibold text-zinc-300 flex items-center gap-1.5">
-              <Mail size={13} className="text-[#d4af37]" /> Email
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-[#8E8E93] ml-1 flex items-center gap-1.5">
+              <Mail size={13} className="text-[#8E8E93]" /> Email
             </label>
             <input
               type="email"
@@ -83,13 +119,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
-              className="w-full bg-zinc-900 border border-white/10 rounded-xl px-3.5 py-2.5 text-white text-xs font-mono focus:outline-none focus:border-[#d4af37]/60"
+              className="w-full bg-[#2C2C2E] rounded-2xl px-4 py-3 text-white text-sm focus:outline-none placeholder:text-[#8E8E93]"
             />
           </div>
 
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-semibold text-zinc-300 flex items-center gap-1.5">
-              <KeyRound size={13} className="text-[#d4af37]" /> Пароль
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-[#8E8E93] ml-1 flex items-center gap-1.5">
+              <Lock size={13} className="text-[#8E8E93]" /> Пароль
             </label>
             <input
               type="password"
@@ -98,14 +134,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Минимум 6 символов"
-              className="w-full bg-zinc-900 border border-white/10 rounded-xl px-3.5 py-2.5 text-white text-xs font-mono focus:outline-none focus:border-[#d4af37]/60"
+              className="w-full bg-[#2C2C2E] rounded-2xl px-4 py-3 text-white text-sm focus:outline-none placeholder:text-[#8E8E93]"
             />
           </div>
 
           <button
             type="submit"
             disabled={isLoading}
-            className="mt-2 w-full py-3 rounded-xl bg-gradient-to-r from-[#d4af37] to-amber-600 hover:from-amber-400 hover:to-amber-600 text-black font-extrabold text-xs tracking-wider flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(212,175,55,0.3)] transition-all cursor-pointer disabled:opacity-50"
+            className="mt-2 w-full py-3.5 rounded-full bg-white hover:bg-zinc-200 text-black font-bold text-xs tracking-tight flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95 disabled:opacity-50"
           >
             {isLoading ? (
               'Загрузка...'
@@ -121,27 +157,17 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
           </button>
         </form>
 
-        <div className="flex items-center justify-between text-xs pt-2 border-t border-white/5">
-          <button
-            type="button"
-            onClick={() => {
-              setIsSignUp(!isSignUp)
-              setErrorMessage(null)
-            }}
-            className="text-zinc-400 hover:text-white transition-colors"
-          >
-            {isSignUp ? 'Уже есть аккаунт? Войти' : 'Нет аккаунта? Создать'}
-          </button>
-
+        <div className="text-center pt-1">
           <button
             type="button"
             onClick={onClose}
-            className="text-zinc-400 hover:text-zinc-200 transition-colors"
+            className="text-xs text-[#8E8E93] hover:text-white transition-colors cursor-pointer"
           >
-            Локально
+            Продолжить без входа
           </button>
         </div>
       </div>
     </div>
   )
 }
+export default AuthModal
