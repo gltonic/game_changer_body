@@ -146,46 +146,47 @@ export const NotificationsModal: React.FC<NotificationsModalProps> = ({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] bg-black/90 backdrop-blur-xl animate-in fade-in duration-200">
-      <div className="relative w-full max-w-md bg-[#0a0a0d] border border-white/10 rounded-3xl p-6 shadow-2xl flex flex-col gap-5 max-h-[88vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] bg-black/85 backdrop-blur-2xl animate-in fade-in duration-200">
+      {/* iOS style modal surface: borderless, solid #1C1C1E, generous padding */}
+      <div className="relative w-full max-w-md bg-[#1C1C1E] rounded-3xl p-6 shadow-2xl flex flex-col gap-5 max-h-[88vh] overflow-y-auto">
         <button
           onClick={onClose}
-          className="absolute top-5 right-5 text-zinc-400 hover:text-white transition-colors p-1 rounded-full hover:bg-white/5 cursor-pointer"
+          className="absolute top-5 right-5 text-[#8E8E93] hover:text-white transition-colors p-2 rounded-full hover:bg-[#2C2C2E] cursor-pointer"
         >
-          <X size={20} />
+          <X size={18} />
         </button>
 
-        {/* Header */}
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#d4af37]/20 to-amber-900/10 border border-[#d4af37]/30 flex items-center justify-center text-2xl shadow-inner text-[#d4af37]">
-            <Bell size={24} />
+        {/* Modal Header */}
+        <div className="flex items-center gap-3.5">
+          <div className="w-12 h-12 rounded-full bg-[#0A84FF]/15 text-[#0A84FF] flex items-center justify-center">
+            <Bell size={22} />
           </div>
           <div>
-            <h2 className="text-lg font-black text-white tracking-wide">
-              Уведомления и Напоминания
+            <h2 className="text-xl font-bold text-white tracking-tight">
+              Уведомления
             </h2>
-            <p className="text-xs text-zinc-400">
-              Гибкая настройка расписания тренировок
+            <p className="text-xs text-[#8E8E93] mt-0.5">
+              Расписание и напоминания
             </p>
           </div>
         </div>
 
-        {/* Browser Push Status Card */}
-        <div className="p-4 rounded-2xl bg-zinc-900/80 border border-white/10 flex flex-col gap-3">
+        {/* Device Push Status Section */}
+        <div className="p-4 rounded-2xl bg-[#2C2C2E] flex flex-col gap-3">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-mono font-bold text-zinc-300">
-              Статус Push на устройстве:
+            <span className="text-xs font-semibold text-[#8E8E93]">
+              Статус на устройстве:
             </span>
             {permission === 'granted' ? (
-              <span className="text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
+              <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#30D158]/15 text-[#30D158] flex items-center gap-1">
                 <Check size={12} strokeWidth={3} /> Активны
               </span>
             ) : permission === 'denied' ? (
-              <span className="text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/20 flex items-center gap-1">
+              <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#FF453A]/15 text-[#FF453A] flex items-center gap-1">
                 <AlertCircle size={12} /> Заблокированы
               </span>
             ) : (
-              <span className="text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/20">
+              <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#3A3A3C] text-[#8E8E93]">
                 Не включены
               </span>
             )}
@@ -195,7 +196,7 @@ export const NotificationsModal: React.FC<NotificationsModalProps> = ({
             <button
               onClick={handleEnablePush}
               disabled={isSubscribing}
-              className="w-full py-3 rounded-xl bg-gradient-to-r from-[#d4af37] to-amber-600 hover:from-amber-400 hover:to-amber-600 text-black font-extrabold text-xs tracking-wider flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(212,175,55,0.35)] transition-all cursor-pointer active:scale-95 disabled:opacity-50"
+              className="w-full py-3 rounded-2xl bg-white hover:bg-zinc-200 text-black font-semibold text-xs tracking-tight flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95 disabled:opacity-50"
             >
               <Sparkles size={14} />
               {isSubscribing ? 'Подключение...' : 'Включить Push-уведомления'}
@@ -203,103 +204,98 @@ export const NotificationsModal: React.FC<NotificationsModalProps> = ({
           ) : (
             <button
               onClick={handleSendTest}
-              className="w-full py-2.5 rounded-xl bg-zinc-800 border border-white/10 hover:border-[#d4af37]/40 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer hover:bg-zinc-700"
+              className="w-full py-2.5 rounded-2xl bg-[#3A3A3C] hover:bg-[#48484A] text-white font-semibold text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer"
             >
-              <Send size={13} className="text-[#d4af37]" />
-              Отправить тестовый пуш сейчас
+              <Send size={14} className="text-[#0A84FF]" />
+              <span>Отправить тестовый пуш сейчас</span>
             </button>
           )}
 
           {testSent && (
-            <div className="p-2.5 rounded-xl bg-emerald-950/40 border border-emerald-500/30 text-emerald-300 text-xs font-semibold flex items-center gap-2 animate-in fade-in">
-              <Check size={14} className="stroke-[3]" />
-              Тестовый пуш отправлен! Проверь шторку уведомлений.
+            <div className="p-3 rounded-2xl bg-[#30D158]/15 text-[#30D158] text-xs font-medium flex items-center gap-2 animate-in fade-in">
+              <Check size={14} strokeWidth={2.5} />
+              <span>Тестовый пуш отправлен на экран блокировки!</span>
             </div>
           )}
         </div>
 
-        {/* Schedule Setup Form */}
-        <div className="p-4 rounded-2xl bg-zinc-900/80 border border-white/10 flex flex-col gap-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-xs font-mono font-bold text-zinc-300">
-              <Clock size={14} className="text-[#d4af37]" />
-              <span>Добавить напоминание</span>
-            </div>
+        {/* Add Reminder Card */}
+        <div className="p-5 rounded-2xl bg-[#2C2C2E] flex flex-col gap-4">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#8E8E93]">
+            <Clock size={14} className="text-[#0A84FF]" />
+            <span>Новое напоминание</span>
           </div>
 
-          {/* Time Picker & Recurring Arrow Button */}
-          <div className="flex flex-col gap-2.5">
-            <div className="flex items-center gap-2">
+          {/* Time Picker & Recurring Switch */}
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-2.5">
               <input
                 type="time"
                 value={newTime}
                 onChange={(e) => setNewTime(e.target.value)}
-                className="flex-1 bg-zinc-950 border border-white/10 rounded-xl px-3 py-2.5 text-white font-mono text-base focus:outline-none focus:border-[#d4af37]/60"
+                className="flex-1 bg-[#1C1C1E] rounded-2xl px-4 py-3 text-white text-lg font-bold focus:outline-none"
               />
 
               <button
                 type="button"
                 onClick={() => setIsRecurring(!isRecurring)}
-                className={`px-3 py-2.5 rounded-xl border flex items-center gap-2 text-xs font-mono transition-all cursor-pointer ${
+                className={`px-4 py-3 rounded-2xl flex items-center gap-2 text-xs font-semibold transition-all cursor-pointer ${
                   isRecurring
-                    ? 'bg-[#d4af37]/15 border-[#d4af37]/50 text-amber-300 shadow-[0_0_12px_rgba(212,175,55,0.2)]'
-                    : 'bg-zinc-950 border-white/10 text-zinc-400 hover:text-white'
+                    ? 'bg-white text-black'
+                    : 'bg-[#1C1C1E] text-[#8E8E93] hover:text-white'
                 }`}
-                title="Нажмите, чтобы включить/выключить ежедневное повторение"
+                title="Переключить ежедневное повторение"
               >
                 <Repeat
                   size={15}
                   className={`transition-transform duration-300 ${
-                    isRecurring ? 'rotate-180 text-[#d4af37]' : 'text-zinc-500'
+                    isRecurring ? 'rotate-180 text-black' : 'text-[#8E8E93]'
                   }`}
                 />
-                <span className="font-semibold">
-                  {isRecurring ? 'Регулярно' : 'Разово'}
-                </span>
+                <span>{isRecurring ? 'Регулярно' : 'Разово'}</span>
               </button>
             </div>
 
-            <p className="text-[11px] text-zinc-400 flex items-center gap-1.5 px-1">
-              <Repeat size={12} className={isRecurring ? 'text-amber-400' : 'text-zinc-600'} />
+            <p className="text-xs text-[#8E8E93] px-1">
               {isRecurring
-                ? 'Стрелочка активна: пуш будет повторяться каждый день в это время.'
-                : 'Разовое напоминание только на сегодня/завтра.'}
+                ? '🔁 Напоминание будет повторяться каждый день в это время.'
+                : '📅 Однократное напоминание только на сегодня/завтра.'}
             </p>
 
             <button
               onClick={handleAddTime}
               disabled={isSaving}
-              className="w-full py-3 rounded-xl bg-gradient-to-r from-[#d4af37] to-amber-600 hover:from-amber-400 hover:to-amber-600 text-black font-extrabold text-xs tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 active:scale-95 shadow-md disabled:opacity-50"
+              className="w-full py-3 rounded-2xl bg-white hover:bg-zinc-200 text-black font-bold text-xs tracking-tight transition-all cursor-pointer flex items-center justify-center gap-1.5 active:scale-95 disabled:opacity-50"
             >
               <Plus size={16} />
-              {isSaving ? 'Сохранение...' : `Поставить пуш на ${newTime}`}
+              <span>{isSaving ? 'Сохранение...' : `Поставить пуш на ${newTime}`}</span>
             </button>
           </div>
 
-          {/* Status Toast Message */}
+          {/* Status Message */}
           {statusMessage && (
-            <div className="p-2 rounded-xl bg-emerald-950/40 border border-emerald-500/30 text-emerald-300 text-xs font-semibold text-center animate-in fade-in">
+            <div className="p-3 rounded-2xl bg-[#30D158]/15 text-[#30D158] text-xs font-medium text-center animate-in fade-in">
               {statusMessage}
             </div>
           )}
 
           {/* Active Reminders List */}
-          <div className="flex flex-col gap-2 pt-3 border-t border-white/5">
-            <div className="flex items-center justify-between text-[11px] font-mono text-zinc-400">
-              <span>Активные напоминания ({scheduledList.length}):</span>
+          <div className="flex flex-col gap-2.5 pt-3 border-t border-white/5">
+            <div className="flex items-center justify-between text-xs text-[#8E8E93] font-semibold">
+              <span>Активные пуши ({scheduledList.length}):</span>
               <button
                 onClick={loadNotifications}
                 disabled={isLoadingList}
-                className="text-zinc-400 hover:text-white transition-colors cursor-pointer p-1"
+                className="text-[#8E8E93] hover:text-white transition-colors cursor-pointer p-1"
                 title="Обновить список"
               >
-                <RefreshCw size={12} className={isLoadingList ? 'animate-spin' : ''} />
+                <RefreshCw size={13} className={isLoadingList ? 'animate-spin' : ''} />
               </button>
             </div>
 
             {scheduledList.length === 0 && !isLoadingList && (
-              <div className="text-center py-4 text-xs text-zinc-500">
-                Нет активных напоминаний. Задайте время выше!
+              <div className="text-center py-4 text-xs text-[#8E8E93]">
+                Нет активных напоминаний
               </div>
             )}
 
@@ -315,28 +311,28 @@ export const NotificationsModal: React.FC<NotificationsModalProps> = ({
                 return (
                   <div
                     key={item.id}
-                    className="flex items-center justify-between p-2.5 rounded-xl bg-zinc-950/70 border border-white/5 hover:border-white/15 transition-all"
+                    className="flex items-center justify-between p-3 rounded-2xl bg-[#1C1C1E] transition-all"
                   >
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-9 h-9 rounded-xl bg-[#d4af37]/10 border border-[#d4af37]/20 flex items-center justify-center text-amber-300 font-mono text-xs font-bold shadow-inner">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-[#2C2C2E] flex items-center justify-center text-white font-bold text-xs">
                         {formattedTime}
                       </div>
                       <div className="flex flex-col">
                         <div className="flex items-center gap-1.5">
-                          <span className="text-xs font-semibold text-zinc-200">
+                          <span className="text-xs font-bold text-white">
                             В {formattedTime}
                           </span>
                           {isItemRecurring ? (
-                            <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 flex items-center gap-0.5">
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#2C2C2E] text-[#8E8E93] font-semibold flex items-center gap-0.5">
                               <Repeat size={9} /> Регулярно
                             </span>
                           ) : (
-                            <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-zinc-800 text-zinc-400">
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#2C2C2E] text-[#8E8E93] font-semibold">
                               Разовое
                             </span>
                           )}
                         </div>
-                        <span className="text-[10px] text-zinc-400 truncate max-w-[180px]">
+                        <span className="text-xs text-[#8E8E93] truncate max-w-[170px] mt-0.5">
                           {item.title}
                         </span>
                       </div>
@@ -344,7 +340,7 @@ export const NotificationsModal: React.FC<NotificationsModalProps> = ({
 
                     <button
                       onClick={() => handleDeleteItem(item.id)}
-                      className="p-2 rounded-lg text-zinc-500 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
+                      className="p-2 rounded-full text-[#8E8E93] hover:text-[#FF453A] hover:bg-[#FF453A]/15 transition-colors cursor-pointer"
                       title="Удалить это напоминание"
                     >
                       <Trash2 size={15} />
