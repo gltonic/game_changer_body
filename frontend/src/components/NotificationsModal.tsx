@@ -9,8 +9,8 @@ import {
   Sparkles,
   Plus,
   Trash2,
-  Zap,
-  RefreshCw
+  RefreshCw,
+  Repeat
 } from 'lucide-react'
 import {
   subscribeToPush,
@@ -18,7 +18,7 @@ import {
   getNotificationPermissionStatus,
   fetchScheduledNotifications,
   deleteScheduledNotification,
-  scheduleRecurringPushNotification,
+  schedulePushNotification,
   type ScheduledNotificationItem
 } from '../lib/pushClient'
 
@@ -40,12 +40,14 @@ export const NotificationsModal: React.FC<NotificationsModalProps> = ({
   const [testSent, setTestSent] = useState(false)
   const [scheduledList, setScheduledList] = useState<ScheduledNotificationItem[]>([])
   const [isLoadingList, setIsLoadingList] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
   const [newTime, setNewTime] = useState('11:00')
+  const [isRecurring, setIsRecurring] = useState(true)
   const [statusMessage, setStatusMessage] = useState<string | null>(null)
 
   const showStatus = (msg: string) => {
     setStatusMessage(msg)
-    setTimeout(() => setStatusMessage(null), 3500)
+    setTimeout(() => setStatusMessage(null), 4000)
   }
 
   const loadNotifications = async () => {
@@ -61,8 +63,13 @@ export const NotificationsModal: React.FC<NotificationsModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      setPermission(getNotificationPermissionStatus())
+      const perm = getNotificationPermissionStatus()
+      setPermission(perm)
       loadNotifications()
+      if (perm === 'granted') {
+        // Sync subscription to backend in case it was created earlier
+        subscribeToPush(backendUrl, userId).catch(() => {})
+      }
     }
   }, [isOpen, userId, backendUrl])
 
@@ -96,21 +103,35 @@ export const NotificationsModal: React.FC<NotificationsModalProps> = ({
     }
   }
 
-  const handleAddTime = async (timeToAdd = newTime) => {
-    if (!timeToAdd) return
+  const handleAddTime = async () => {
+    if (!newTime) return
+    setIsSaving(true)
     try {
-      await scheduleRecurringPushNotification(
-        backendUrl,
+      const [hours, minutes] = newTime.split(':').map(Number)
+      const targetDate = new Date()
+      targetDate.setHours(hours, minutes, 0, 0)
+      if (targetDate.getTime() <= Date.now()) {
+        targetDate.setDate(targetDate.getDate() + 1)
+      }
+
+      await schedulePushNotification(backendUrl, {
         userId,
-        timeToAdd,
-        'Game Changer: Body 🎯',
-        'Время для твоей микротренировки! Сохраняй стрик и продолжай путь.'
-      )
-      showStatus(`✓ Напоминание на ${timeToAdd} добавлено!`)
+        targetTime: targetDate.toISOString(),
+        title: 'Game Changer: Body 🎯',
+        body: 'Время для твоей микротренировки! Сохраняй стрик и продолжай путь.',
+        payload: {
+          recurring: isRecurring,
+          time: newTime
+        }
+      })
+
+      showStatus(`✓ Напоминание на ${newTime} ${isRecurring ? '(ежедневно)' : '(разовое)'} сохранено!`)
       await loadNotifications()
-    } catch (e) {
+    } catch (e: any) {
       console.error(e)
-      showStatus('Ошибка при добавлении напоминания')
+      showStatus(e?.message || 'Ошибка при сохранении напоминания')
+    } finally {
+      setIsSaving(false)
     }
   }
 
@@ -119,24 +140,6 @@ export const NotificationsModal: React.FC<NotificationsModalProps> = ({
       await deleteScheduledNotification(backendUrl, id)
       setScheduledList((prev) => prev.filter((item) => item.id !== id))
       showStatus('Напоминание удалено')
-    } catch (e) {
-      console.error(e)
-    }
-  }
-
-  const handleApplyPreset = async (presetTimes: string[]) => {
-    try {
-      for (const t of presetTimes) {
-        await scheduleRecurringPushNotification(
-          backendUrl,
-          userId,
-          t,
-          'Game Changer: Body 🎯',
-          'Время для твоей микротренировки! Защити стрик.'
-        )
-      }
-      showStatus(`✓ Добавлено ${presetTimes.length} напоминания`)
-      await loadNotifications()
     } catch (e) {
       console.error(e)
     }
@@ -159,10 +162,10 @@ export const NotificationsModal: React.FC<NotificationsModalProps> = ({
           </div>
           <div>
             <h2 className="text-lg font-black text-white tracking-wide">
-              Уведомления и Расписание
+              Уведомления и Напоминания
             </h2>
             <p className="text-xs text-zinc-400">
-              Гибкие напоминания несколько раз в день
+              Гибкая настройка расписания тренировок
             </p>
           </div>
         </div>
@@ -215,90 +218,99 @@ export const NotificationsModal: React.FC<NotificationsModalProps> = ({
           )}
         </div>
 
-        {/* Multi-Schedule Management */}
+        {/* Schedule Setup Form */}
         <div className="p-4 rounded-2xl bg-zinc-900/80 border border-white/10 flex flex-col gap-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-xs font-mono font-bold text-zinc-300">
               <Clock size={14} className="text-[#d4af37]" />
-              <span>Расписание напоминаний</span>
-            </div>
-            <button
-              onClick={loadNotifications}
-              disabled={isLoadingList}
-              className="text-zinc-400 hover:text-white transition-colors cursor-pointer p-1"
-              title="Обновить список"
-            >
-              <RefreshCw size={13} className={isLoadingList ? 'animate-spin' : ''} />
-            </button>
-          </div>
-
-          {/* Quick Presets */}
-          <div className="flex flex-col gap-1.5">
-            <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-wider">
-              Быстрые шаблоны:
-            </span>
-            <div className="flex flex-wrap gap-1.5">
-              <button
-                onClick={() => handleApplyPreset(['11:00', '16:00', '20:00'])}
-                className="px-2.5 py-1.5 rounded-lg bg-zinc-800/80 hover:bg-[#d4af37]/20 border border-white/5 hover:border-[#d4af37]/40 text-[11px] font-mono text-zinc-300 hover:text-amber-300 transition-all cursor-pointer flex items-center gap-1"
-              >
-                <Zap size={11} className="text-[#d4af37]" /> 3 раза в день (11, 16, 20)
-              </button>
-              <button
-                onClick={() => handleApplyPreset(['10:00', '13:00', '16:00', '19:00'])}
-                className="px-2.5 py-1.5 rounded-lg bg-zinc-800/80 hover:bg-[#d4af37]/20 border border-white/5 hover:border-[#d4af37]/40 text-[11px] font-mono text-zinc-300 hover:text-amber-300 transition-all cursor-pointer flex items-center gap-1"
-              >
-                <Zap size={11} className="text-[#d4af37]" /> Каждые 3 ч (10, 13, 16, 19)
-              </button>
-              <button
-                onClick={() => handleApplyPreset(['09:30', '20:30'])}
-                className="px-2.5 py-1.5 rounded-lg bg-zinc-800/80 hover:bg-[#d4af37]/20 border border-white/5 hover:border-[#d4af37]/40 text-[11px] font-mono text-zinc-300 hover:text-amber-300 transition-all cursor-pointer flex items-center gap-1"
-              >
-                <Zap size={11} className="text-[#d4af37]" /> Утро + Вечер (09:30, 20:30)
-              </button>
+              <span>Добавить напоминание</span>
             </div>
           </div>
 
-          {/* Add Custom Time */}
-          <div className="flex items-center gap-2 pt-2 border-t border-white/5">
-            <input
-              type="time"
-              value={newTime}
-              onChange={(e) => setNewTime(e.target.value)}
-              className="flex-1 bg-zinc-950 border border-white/10 rounded-xl px-3 py-2 text-white font-mono text-sm focus:outline-none focus:border-[#d4af37]/60"
-            />
+          {/* Time Picker & Recurring Arrow Button */}
+          <div className="flex flex-col gap-2.5">
+            <div className="flex items-center gap-2">
+              <input
+                type="time"
+                value={newTime}
+                onChange={(e) => setNewTime(e.target.value)}
+                className="flex-1 bg-zinc-950 border border-white/10 rounded-xl px-3 py-2.5 text-white font-mono text-base focus:outline-none focus:border-[#d4af37]/60"
+              />
+
+              <button
+                type="button"
+                onClick={() => setIsRecurring(!isRecurring)}
+                className={`px-3 py-2.5 rounded-xl border flex items-center gap-2 text-xs font-mono transition-all cursor-pointer ${
+                  isRecurring
+                    ? 'bg-[#d4af37]/15 border-[#d4af37]/50 text-amber-300 shadow-[0_0_12px_rgba(212,175,55,0.2)]'
+                    : 'bg-zinc-950 border-white/10 text-zinc-400 hover:text-white'
+                }`}
+                title="Нажмите, чтобы включить/выключить ежедневное повторение"
+              >
+                <Repeat
+                  size={15}
+                  className={`transition-transform duration-300 ${
+                    isRecurring ? 'rotate-180 text-[#d4af37]' : 'text-zinc-500'
+                  }`}
+                />
+                <span className="font-semibold">
+                  {isRecurring ? 'Регулярно' : 'Разово'}
+                </span>
+              </button>
+            </div>
+
+            <p className="text-[11px] text-zinc-400 flex items-center gap-1.5 px-1">
+              <Repeat size={12} className={isRecurring ? 'text-amber-400' : 'text-zinc-600'} />
+              {isRecurring
+                ? 'Стрелочка активна: пуш будет повторяться каждый день в это время.'
+                : 'Разовое напоминание только на сегодня/завтра.'}
+            </p>
+
             <button
-              onClick={() => handleAddTime(newTime)}
-              className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#d4af37] to-amber-600 hover:from-amber-400 hover:to-amber-600 text-black font-extrabold text-xs tracking-wider transition-all cursor-pointer flex items-center gap-1 active:scale-95 shadow-md"
+              onClick={handleAddTime}
+              disabled={isSaving}
+              className="w-full py-3 rounded-xl bg-gradient-to-r from-[#d4af37] to-amber-600 hover:from-amber-400 hover:to-amber-600 text-black font-extrabold text-xs tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 active:scale-95 shadow-md disabled:opacity-50"
             >
-              <Plus size={14} /> Добавить
+              <Plus size={16} />
+              {isSaving ? 'Сохранение...' : `Поставить пуш на ${newTime}`}
             </button>
           </div>
 
-          {/* Status Message */}
+          {/* Status Toast Message */}
           {statusMessage && (
-            <div className="text-[11px] font-mono text-emerald-400 text-center animate-in fade-in">
+            <div className="p-2 rounded-xl bg-emerald-950/40 border border-emerald-500/30 text-emerald-300 text-xs font-semibold text-center animate-in fade-in">
               {statusMessage}
             </div>
           )}
 
-          {/* Active Scheduled Times List */}
-          <div className="flex flex-col gap-2 pt-2 border-t border-white/5">
+          {/* Active Reminders List */}
+          <div className="flex flex-col gap-2 pt-3 border-t border-white/5">
             <div className="flex items-center justify-between text-[11px] font-mono text-zinc-400">
-              <span>Активные пуши ({scheduledList.length}):</span>
-              {scheduledList.length === 0 && !isLoadingList && (
-                <span className="text-zinc-600">Нет напоминаний</span>
-              )}
+              <span>Активные напоминания ({scheduledList.length}):</span>
+              <button
+                onClick={loadNotifications}
+                disabled={isLoadingList}
+                className="text-zinc-400 hover:text-white transition-colors cursor-pointer p-1"
+                title="Обновить список"
+              >
+                <RefreshCw size={12} className={isLoadingList ? 'animate-spin' : ''} />
+              </button>
             </div>
 
-            <div className="flex flex-col gap-1.5 max-h-48 overflow-y-auto pr-1">
+            {scheduledList.length === 0 && !isLoadingList && (
+              <div className="text-center py-4 text-xs text-zinc-500">
+                Нет активных напоминаний. Задайте время выше!
+              </div>
+            )}
+
+            <div className="flex flex-col gap-2 max-h-48 overflow-y-auto pr-1">
               {scheduledList.map((item) => {
                 const target = new Date(item.target_time)
                 const formattedTime = target.toLocaleTimeString([], {
                   hour: '2-digit',
                   minute: '2-digit'
                 })
-                const isRecurring = item.payload?.recurring
+                const isItemRecurring = item.payload?.recurring ?? true
 
                 return (
                   <div
@@ -306,14 +318,25 @@ export const NotificationsModal: React.FC<NotificationsModalProps> = ({
                     className="flex items-center justify-between p-2.5 rounded-xl bg-zinc-950/70 border border-white/5 hover:border-white/15 transition-all"
                   >
                     <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-lg bg-[#d4af37]/10 border border-[#d4af37]/20 flex items-center justify-center text-amber-300 font-mono text-xs font-bold">
+                      <div className="w-9 h-9 rounded-xl bg-[#d4af37]/10 border border-[#d4af37]/20 flex items-center justify-center text-amber-300 font-mono text-xs font-bold shadow-inner">
                         {formattedTime}
                       </div>
                       <div className="flex flex-col">
-                        <span className="text-xs font-semibold text-zinc-200">
-                          {isRecurring ? 'Ежедневно' : 'Разовое'} в {formattedTime}
-                        </span>
-                        <span className="text-[10px] text-zinc-400 truncate max-w-[170px]">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs font-semibold text-zinc-200">
+                            В {formattedTime}
+                          </span>
+                          {isItemRecurring ? (
+                            <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 flex items-center gap-0.5">
+                              <Repeat size={9} /> Регулярно
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-zinc-800 text-zinc-400">
+                              Разовое
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-[10px] text-zinc-400 truncate max-w-[180px]">
                           {item.title}
                         </span>
                       </div>
@@ -321,10 +344,10 @@ export const NotificationsModal: React.FC<NotificationsModalProps> = ({
 
                     <button
                       onClick={() => handleDeleteItem(item.id)}
-                      className="p-1.5 rounded-lg text-zinc-500 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
+                      className="p-2 rounded-lg text-zinc-500 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
                       title="Удалить это напоминание"
                     >
-                      <Trash2 size={14} />
+                      <Trash2 size={15} />
                     </button>
                   </div>
                 )
@@ -336,4 +359,5 @@ export const NotificationsModal: React.FC<NotificationsModalProps> = ({
     </div>
   )
 }
+
 export default NotificationsModal
