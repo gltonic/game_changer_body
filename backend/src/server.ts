@@ -173,6 +173,48 @@ export function createApp(config: ServerConfig) {
     }
   })
 
+  // Get active scheduled notifications for a user
+  app.get('/api/push/scheduled/:userId', async (req: Request, res: Response) => {
+    try {
+      const { userId } = req.params
+      const { data, error } = await supabase
+        .from('scheduled_notifications')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('sent', false)
+        .order('target_time', { ascending: true })
+
+      if (error) {
+        res.status(500).json({ error: error.message })
+        return
+      }
+
+      res.json({ notifications: data || [] })
+    } catch (err: any) {
+      res.status(500).json({ error: err.message })
+    }
+  })
+
+  // Cancel / delete a scheduled notification
+  app.delete('/api/push/scheduled/:id', async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params
+      const { error } = await supabase
+        .from('scheduled_notifications')
+        .delete()
+        .eq('id', id)
+
+      if (error) {
+        res.status(500).json({ error: error.message })
+        return
+      }
+
+      res.json({ success: true })
+    } catch (err: any) {
+      res.status(500).json({ error: err.message })
+    }
+  })
+
   return app
 }
 
@@ -244,6 +286,27 @@ export async function processDueNotifications(config: ServerConfig): Promise<num
       .from('scheduled_notifications')
       .update({ sent: true, sent_at: new Date().toISOString() })
       .eq('id', notif.id)
+
+    // 4. If recurring daily reminder, queue next occurrence for tomorrow at the same time
+    if (notif.payload && notif.payload.recurring && notif.payload.time) {
+      try {
+        const [hours, minutes] = notif.payload.time.split(':').map(Number)
+        const nextTarget = new Date()
+        nextTarget.setDate(nextTarget.getDate() + 1)
+        nextTarget.setHours(hours, minutes, 0, 0)
+
+        await supabase.from('scheduled_notifications').insert({
+          user_id: notif.user_id,
+          target_time: nextTarget.toISOString(),
+          title: notif.title,
+          body: notif.body,
+          payload: notif.payload,
+          sent: false
+        })
+      } catch (recurErr) {
+        console.error('Error queuing next recurring notification:', recurErr)
+      }
+    }
 
     sentCount++
   }

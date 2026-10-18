@@ -19,6 +19,21 @@ export interface SchedulePushOptions {
   payload?: any
 }
 
+export interface ScheduledNotificationItem {
+  id: string
+  user_id: string
+  target_time: string
+  title: string
+  body: string
+  payload?: {
+    recurring?: boolean
+    time?: string
+    [key: string]: any
+  }
+  sent: boolean
+  created_at?: string
+}
+
 export async function schedulePushNotification(
   backendUrl: string,
   options: SchedulePushOptions
@@ -37,6 +52,62 @@ export async function schedulePushNotification(
   }
 
   return res.json()
+}
+
+export async function fetchScheduledNotifications(
+  backendUrl: string,
+  userId: string
+): Promise<ScheduledNotificationItem[]> {
+  try {
+    const res = await fetch(`${backendUrl}/api/push/scheduled/${encodeURIComponent(userId)}`)
+    if (!res.ok) return []
+    const data = await res.json()
+    return data.notifications || []
+  } catch (e) {
+    console.error('Failed to fetch scheduled notifications', e)
+    return []
+  }
+}
+
+export async function deleteScheduledNotification(
+  backendUrl: string,
+  id: string
+): Promise<boolean> {
+  try {
+    const res = await fetch(`${backendUrl}/api/push/scheduled/${encodeURIComponent(id)}`, {
+      method: 'DELETE'
+    })
+    return res.ok
+  } catch (e) {
+    console.error('Failed to delete scheduled notification', e)
+    return false
+  }
+}
+
+export async function scheduleRecurringPushNotification(
+  backendUrl: string,
+  userId: string,
+  timeStr: string,
+  title = 'Game Changer: Body 🎯',
+  body = 'Время для твоей микротренировки! Сохраняй стрик.'
+) {
+  const [hours, minutes] = timeStr.split(':').map(Number)
+  const targetDate = new Date()
+  targetDate.setHours(hours, minutes, 0, 0)
+  if (targetDate.getTime() <= Date.now()) {
+    targetDate.setDate(targetDate.getDate() + 1)
+  }
+
+  return schedulePushNotification(backendUrl, {
+    userId,
+    targetTime: targetDate.toISOString(),
+    title,
+    body,
+    payload: {
+      recurring: true,
+      time: timeStr
+    }
+  })
 }
 
 export async function subscribeToPush(backendUrl: string, userId: string): Promise<boolean> {
