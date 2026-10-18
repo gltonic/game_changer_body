@@ -63,6 +63,11 @@ export function App() {
 
   // Modals state
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false)
+  const [editingTrailData, setEditingTrailData] = useState<{
+    max_baseline?: number
+    total_workouts?: number
+    weight_kg?: number
+  } | undefined>(undefined)
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
   const [activeWorkout, setActiveWorkout] = useState<WorkoutSessionPlan | null>(null)
   const [finishedWorkoutPlan, setFinishedWorkoutPlan] = useState<WorkoutSessionPlan | null>(null)
@@ -75,6 +80,73 @@ export function App() {
   const showToast = (msg: string) => {
     setToastMessage(msg)
     setTimeout(() => setToastMessage(null), 3500)
+  }
+
+  const handleDeleteTrail = async (discipline: Discipline) => {
+    setUserDisciplines((prev) => {
+      const copy = { ...prev }
+      delete copy[discipline]
+      localStorage.setItem('gc_body_disciplines', JSON.stringify(copy))
+      return copy
+    })
+    showToast(`✓ Тропа «${DISCIPLINES_META[discipline].label}» удалена`)
+
+    if (currentUser?.id) {
+      try {
+        await supabase
+          .from('user_disciplines')
+          .delete()
+          .eq('user_id', currentUser.id)
+          .eq('discipline', discipline)
+      } catch (err) {
+        console.error('Failed deleting trail from Supabase:', err)
+      }
+    }
+  }
+
+  const handleEditTrail = (discipline: Discipline) => {
+    const existing = userDisciplines[discipline]
+    if (existing) {
+      setEditingTrailData({
+        max_baseline: existing.max_baseline,
+        total_workouts: existing.total_workouts,
+        weight_kg: existing.weight_kg
+      })
+    } else {
+      setEditingTrailData(undefined)
+    }
+    setCurrentDiscipline(discipline)
+    setIsOnboardingOpen(true)
+  }
+
+  const handleResetTrail = async (discipline: Discipline) => {
+    const existing = userDisciplines[discipline]
+    if (!existing) return
+
+    const updated: DisciplineData = {
+      ...existing,
+      current_workout_index: 0
+    }
+
+    setUserDisciplines((prev) => {
+      const copy = { ...prev, [discipline]: updated }
+      localStorage.setItem('gc_body_disciplines', JSON.stringify(copy))
+      return copy
+    })
+
+    showToast(`✓ Прогресс тропы «${DISCIPLINES_META[discipline].label}» сброшен к началу`)
+
+    if (currentUser?.id) {
+      try {
+        await supabase
+          .from('user_disciplines')
+          .update({ current_workout_index: 0, updated_at: new Date().toISOString() })
+          .eq('user_id', currentUser.id)
+          .eq('discipline', discipline)
+      } catch (err) {
+        console.error('Failed resetting trail progress in Supabase:', err)
+      }
+    }
   }
 
   // Check push permission on mount
@@ -458,12 +530,16 @@ export function App() {
             onStartWorkout={handleStartWorkout}
             onOpenCreateTrail={(disc) => {
               if (disc) setCurrentDiscipline(disc)
+              setEditingTrailData(undefined)
               setIsOnboardingOpen(true)
             }}
             onOpenNotifications={() => setIsNotificationsOpen(true)}
             onSendTestNotification={handleSendTestPush}
             workoutHistory={workoutHistory}
             isPushActive={isPushActive}
+            onDeleteTrail={handleDeleteTrail}
+            onEditTrail={handleEditTrail}
+            onResetTrail={handleResetTrail}
           />
         ) : (
           <div className="w-full flex flex-col items-center">
@@ -475,22 +551,25 @@ export function App() {
               />
             ) : (
               <div className="flex-1 flex flex-col items-center justify-center py-20 text-center gap-6 animate-in fade-in duration-300">
-                <div className="w-24 h-24 rounded-3xl bg-gradient-to-tr from-zinc-900 via-zinc-800 to-zinc-900 border border-white/10 flex items-center justify-center text-5xl shadow-[0_0_30px_rgba(212,175,55,0.15)]">
+                <div className="w-24 h-24 rounded-full bg-[#1C1C1E] flex items-center justify-center text-5xl">
                   {DISCIPLINES_META[currentDiscipline].icon}
                 </div>
 
                 <div className="flex flex-col gap-2">
-                  <h2 className="text-xl font-black text-white tracking-wide">
+                  <h2 className="text-xl font-bold text-white tracking-tight">
                     {DISCIPLINES_META[currentDiscipline].label}
                   </h2>
-                  <p className="text-xs text-zinc-400 max-w-xs leading-relaxed">
-                    Тропа еще не рассчитана. Введи свой текущий рекорд и начни стрик!
+                  <p className="text-xs text-[#8E8E93] max-w-xs leading-relaxed">
+                    Тропа еще не рассчитана. Введите свой текущий рекорд и начните стрик!
                   </p>
                 </div>
 
                 <button
-                  onClick={() => setIsOnboardingOpen(true)}
-                  className="px-8 py-4 rounded-2xl bg-gradient-to-r from-[#d4af37] to-amber-600 hover:from-amber-400 hover:to-amber-600 text-black font-extrabold text-sm tracking-wider flex items-center gap-2 shadow-[0_0_25px_rgba(212,175,55,0.4)] transition-all cursor-pointer active:scale-95"
+                  onClick={() => {
+                    setEditingTrailData(undefined)
+                    setIsOnboardingOpen(true)
+                  }}
+                  className="px-8 py-4 rounded-full bg-white hover:bg-zinc-200 text-black font-bold text-sm tracking-tight flex items-center gap-2 transition-all cursor-pointer active:scale-95"
                 >
                   <Sparkles size={18} /> Создать тропу прогрессии
                 </button>
@@ -547,8 +626,12 @@ export function App() {
       <OnboardingModal
         discipline={currentDiscipline}
         isOpen={isOnboardingOpen}
-        onClose={() => setIsOnboardingOpen(false)}
+        onClose={() => {
+          setIsOnboardingOpen(false)
+          setEditingTrailData(undefined)
+        }}
         onSaveTrail={handleSaveTrail}
+        initialData={editingTrailData}
       />
 
       {activeWorkout && (

@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState, useRef } from 'react'
 import {
   Flame,
   Trophy,
@@ -9,7 +9,12 @@ import {
   CheckCircle2,
   Sparkles,
   Send,
-  Dumbbell
+  Dumbbell,
+  MoreHorizontal,
+  Pencil,
+  RotateCcw,
+  Trash2,
+  X
 } from 'lucide-react'
 import { DISCIPLINES_META } from './DisciplineBar'
 import type { Discipline, WorkoutSessionPlan } from '../lib/progression'
@@ -33,6 +38,9 @@ interface MainDashboardProps {
   onSendTestNotification: () => void
   workoutHistory?: any[]
   isPushActive: boolean
+  onDeleteTrail?: (d: Discipline) => void
+  onEditTrail?: (d: Discipline) => void
+  onResetTrail?: (d: Discipline) => void
 }
 
 export const MainDashboard: React.FC<MainDashboardProps> = ({
@@ -43,8 +51,14 @@ export const MainDashboard: React.FC<MainDashboardProps> = ({
   onOpenNotifications,
   onSendTestNotification,
   workoutHistory = [],
-  isPushActive
+  isPushActive,
+  onDeleteTrail,
+  onEditTrail,
+  onResetTrail
 }) => {
+  const [selectedActionDiscipline, setSelectedActionDiscipline] = useState<Discipline | null>(null)
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
   const activeEntries = Object.entries(userDisciplines).filter(
     ([, data]) => data && data.trail_data && data.trail_data.length > 0
   )
@@ -57,6 +71,20 @@ export const MainDashboard: React.FC<MainDashboardProps> = ({
 
   // Calculate dynamic streak based on completed workouts
   const totalStreakDays = totalCompleted > 0 ? Math.min(totalCompleted + 1, 14) : 0
+
+  // Long press handler
+  const handleTouchStart = (disc: Discipline) => {
+    longPressTimerRef.current = setTimeout(() => {
+      setSelectedActionDiscipline(disc)
+    }, 550)
+  }
+
+  const handleTouchEnd = () => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current)
+      longPressTimerRef.current = null
+    }
+  }
 
   return (
     <div className="flex flex-col gap-6 w-full max-w-md mx-auto py-5 pb-32 animate-in fade-in duration-300">
@@ -164,7 +192,7 @@ export const MainDashboard: React.FC<MainDashboardProps> = ({
               Тропы
             </h3>
             <p className="text-xs text-[#8E8E93] mt-0.5">
-              Прогресс по дисциплинам
+              Зажмите карточку или нажмите «•••» для настройки
             </p>
           </div>
           <button
@@ -208,7 +236,11 @@ export const MainDashboard: React.FC<MainDashboardProps> = ({
               return (
                 <div
                   key={discKey}
-                  className="rounded-3xl bg-[#1C1C1E] p-6 flex flex-col gap-5 transition-all"
+                  onTouchStart={() => handleTouchStart(disc)}
+                  onTouchEnd={handleTouchEnd}
+                  onMouseDown={() => handleTouchStart(disc)}
+                  onMouseUp={handleTouchEnd}
+                  className="rounded-3xl bg-[#1C1C1E] p-6 flex flex-col gap-5 transition-all select-none relative"
                 >
                   {/* Top card row */}
                   <div className="flex items-center justify-between">
@@ -232,14 +264,28 @@ export const MainDashboard: React.FC<MainDashboardProps> = ({
                       </div>
                     </div>
 
-                    <button
-                      onClick={() => onOpenTrailView(disc)}
-                      className="px-3.5 py-1.5 rounded-full bg-[#2C2C2E] hover:bg-[#3A3A3C] text-white transition-colors flex items-center gap-1.5 text-xs font-semibold cursor-pointer"
-                      title="Открыть карту тропы"
-                    >
-                      <Map size={14} className="text-[#0A84FF]" />
-                      <span>Карта</span>
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => onOpenTrailView(disc)}
+                        className="px-3.5 py-1.5 rounded-full bg-[#2C2C2E] hover:bg-[#3A3A3C] text-white transition-colors flex items-center gap-1.5 text-xs font-semibold cursor-pointer"
+                        title="Открыть карту тропы"
+                      >
+                        <Map size={14} className="text-[#0A84FF]" />
+                        <span>Карта</span>
+                      </button>
+
+                      {/* More / Edit options button */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setSelectedActionDiscipline(disc)
+                        }}
+                        className="w-8 h-8 rounded-full bg-[#2C2C2E] hover:bg-[#3A3A3C] text-[#8E8E93] hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+                        title="Управление тропой"
+                      >
+                        <MoreHorizontal size={15} />
+                      </button>
+                    </div>
                   </div>
 
                   {/* Activity Progress Bar (Solid iOS Health style) */}
@@ -333,6 +379,94 @@ export const MainDashboard: React.FC<MainDashboardProps> = ({
             })}
           </div>
         </section>
+      )}
+
+      {/* 5. Apple iOS Action Sheet: Trail Management (Edit / Reset / Delete) */}
+      {selectedActionDiscipline && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="w-full max-w-sm bg-[#1C1C1E] rounded-3xl p-5 shadow-2xl flex flex-col gap-3 animate-in slide-in-from-bottom-5 duration-200">
+            {/* Action Sheet Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-white/5">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">{DISCIPLINES_META[selectedActionDiscipline].icon}</span>
+                <div>
+                  <h4 className="text-base font-bold text-white tracking-tight">
+                    {DISCIPLINES_META[selectedActionDiscipline].label}
+                  </h4>
+                  <span className="text-xs text-[#8E8E93]">Управление тропой</span>
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedActionDiscipline(null)}
+                className="p-1.5 rounded-full hover:bg-[#2C2C2E] text-[#8E8E93] hover:text-white transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={() => {
+                  const d = selectedActionDiscipline
+                  setSelectedActionDiscipline(null)
+                  onEditTrail?.(d)
+                }}
+                className="w-full py-3.5 px-4 rounded-2xl bg-[#2C2C2E] hover:bg-[#3A3A3C] text-white font-semibold text-sm flex items-center gap-3 transition-colors text-left cursor-pointer active:scale-98"
+              >
+                <Pencil size={18} className="text-[#0A84FF]" />
+                <div className="flex flex-col">
+                  <span>Редактировать параметры</span>
+                  <span className="text-[11px] font-normal text-[#8E8E93]">
+                    Изменить рекорд, кол-во тренировок и пересчитать
+                  </span>
+                </div>
+              </button>
+
+              <button
+                onClick={() => {
+                  const d = selectedActionDiscipline
+                  setSelectedActionDiscipline(null)
+                  onResetTrail?.(d)
+                }}
+                className="w-full py-3.5 px-4 rounded-2xl bg-[#2C2C2E] hover:bg-[#3A3A3C] text-white font-semibold text-sm flex items-center gap-3 transition-colors text-left cursor-pointer active:scale-98"
+              >
+                <RotateCcw size={18} className="text-[#FF9F0A]" />
+                <div className="flex flex-col">
+                  <span>Начать заново с 1-й тренировки</span>
+                  <span className="text-[11px] font-normal text-[#8E8E93]">
+                    Сбросить текущий прогресс без изменения структуры
+                  </span>
+                </div>
+              </button>
+
+              <button
+                onClick={() => {
+                  const d = selectedActionDiscipline
+                  setSelectedActionDiscipline(null)
+                  onDeleteTrail?.(d)
+                }}
+                className="w-full py-3.5 px-4 rounded-2xl bg-[#FF453A]/15 hover:bg-[#FF453A]/25 text-[#FF453A] font-semibold text-sm flex items-center gap-3 transition-colors text-left cursor-pointer active:scale-98"
+              >
+                <Trash2 size={18} />
+                <div className="flex flex-col">
+                  <span>Удалить тропу</span>
+                  <span className="text-[11px] font-normal text-[#FF453A]/80">
+                    Удалить данные тропы и освободить слот
+                  </span>
+                </div>
+              </button>
+            </div>
+
+            {/* Cancel Button */}
+            <button
+              onClick={() => setSelectedActionDiscipline(null)}
+              className="w-full py-3 rounded-2xl bg-[#2C2C2E] hover:bg-[#3A3A3C] text-white font-semibold text-xs tracking-tight text-center transition-colors cursor-pointer mt-1"
+            >
+              Отмена
+            </button>
+          </div>
+        </div>
       )}
     </div>
   )
