@@ -45,4 +45,21 @@ describe('useWorkoutSession React Hook', () => {
     expect(result.current.status).toBe('in_set')
     expect(result.current.currentSetIndex).toBe(1)
   })
+
+  it('syncs timers on visibilitychange when returning to app', () => {
+    const { result } = renderHook(() => useWorkoutSession(mockPlan))
+
+    act(() => {
+      result.current.startWorkout()
+      result.current.completeCurrentSet()
+    })
+    expect(result.current.remainingRest).toBe(120)
+
+    // Trigger visibilitychange event
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'))
+    })
+    // Remained valid and synced
+    expect(result.current.status).toBe('resting')
+  })
 })

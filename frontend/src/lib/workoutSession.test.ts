@@ -97,4 +97,79 @@ describe('Workout Session & Rest Timer Manager', () => {
     expect(state.completedSets).toEqual([6, 5, 5, 4, 3])
     expect(onWorkoutComplete).toHaveBeenCalledWith([6, 5, 5, 4, 3])
   })
+
+  it('syncWithCurrentTime accurately jumps forward when phone woke up after 40 seconds of rest', () => {
+    const session = createWorkoutSessionManager(mockPlan)
+    session.startWorkout()
+    session.completeCurrentSet()
+
+    expect(session.getState().remainingRest).toBe(120)
+
+    // Simulate 40 seconds passing in background
+    const startTime = Date.now()
+    session.syncWithCurrentTime(startTime + 40000)
+
+    expect(session.getState().remainingRest).toBe(80)
+    expect(session.getState().status).toBe('resting')
+  })
+
+  it('syncWithCurrentTime completes rest when sleep duration exceeds remaining rest', () => {
+    const onRestComplete = vi.fn()
+    const session = createWorkoutSessionManager(mockPlan, { onRestComplete })
+    session.startWorkout()
+    session.completeCurrentSet()
+
+    // 130s sleep when rest is 120s
+    const startTime = Date.now()
+    session.syncWithCurrentTime(startTime + 130000)
+
+    expect(session.getState().status).toBe('in_set')
+    expect(session.getState().currentSetIndex).toBe(1)
+    expect(session.getState().remainingRest).toBe(0)
+    expect(onRestComplete).toHaveBeenCalledTimes(1)
+  })
+
+  it('triggers onCountdownPip when rest has 3, 2, 1 seconds left', () => {
+    const onCountdownPip = vi.fn()
+    const session = createWorkoutSessionManager(mockPlan, { onCountdownPip })
+    session.startWorkout()
+    session.completeCurrentSet()
+
+    session.setRemainingRest(4)
+    session.tickRest() // remaining becomes 3
+    expect(onCountdownPip).toHaveBeenCalledWith(3)
+
+    session.tickRest() // remaining becomes 2
+    expect(onCountdownPip).toHaveBeenCalledWith(2)
+
+    session.tickRest() // remaining becomes 1
+    expect(onCountdownPip).toHaveBeenCalledWith(1)
+  })
+
+  it('restores state from saved session and syncs time elapsed since closure', () => {
+    const savedTime = Date.now() - 30000 // closed 30s ago
+    const savedState = {
+      status: 'resting' as const,
+      currentSetIndex: 0,
+      completedSets: [6],
+      remainingRest: 90,
+      isRestPaused: false,
+      totalSets: 5,
+      activeSetSeconds: 0,
+      isSetPaused: false,
+      currentSetTarget: 5,
+      currentSetActual: 5,
+      savedAt: savedTime
+    }
+
+    const session = createWorkoutSessionManager(mockPlan, undefined, savedState)
+    session.syncWithCurrentTime(savedTime + 30000)
+
+    // 90s - 30s = 60s remaining
+    expect(session.getState().remainingRest).toBe(60)
+    expect(session.getState().completedSets).toEqual([6])
+    expect(session.getState().status).toBe('resting')
+  })
 })
+
+

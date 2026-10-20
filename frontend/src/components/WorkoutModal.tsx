@@ -10,9 +10,11 @@ import {
   Flame,
   Clock,
   Timer as TimerIcon,
-  Sparkles
+  Sparkles,
+  Sun
 } from 'lucide-react'
 import { useWorkoutSession } from '../lib/useWorkoutSession'
+import { useWakeLock } from '../lib/useWakeLock'
 import type { WorkoutSessionPlan } from '../lib/progression'
 import { DISCIPLINES_META } from './DisciplineBar'
 
@@ -38,6 +40,9 @@ export const WorkoutModal: React.FC<WorkoutModalProps> = ({
     }
   })
 
+  // Prevent phone screen from turning off during active workout / rest
+  const wakeLock = useWakeLock(isOpen && session.status !== 'completed' && session.status !== 'idle')
+
   if (!isOpen) return null
 
   const formatSeconds = (totalSeconds: number) => {
@@ -58,13 +63,24 @@ export const WorkoutModal: React.FC<WorkoutModalProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] bg-black/85 backdrop-blur-2xl animate-in fade-in duration-200">
       {/* iOS style modal surface: borderless, solid #1C1C1E */}
       <div className="relative w-full max-w-md bg-[#1C1C1E] rounded-3xl p-6 shadow-2xl flex flex-col gap-5">
-        {/* Close Button */}
-        <button
-          onClick={onClose}
-          className="absolute top-5 right-5 text-[#8E8E93] hover:text-white transition-colors p-2 rounded-full hover:bg-[#2C2C2E] cursor-pointer"
-        >
-          <X size={18} />
-        </button>
+        {/* Top Actions: Wake lock status + Close Button */}
+        <div className="absolute top-5 right-5 flex items-center gap-2">
+          {wakeLock.isLocked && (
+            <span
+              title="Экран заблокирован от выключения на время тренировки"
+              className="flex items-center gap-1 text-[11px] font-medium text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20 animate-in fade-in"
+            >
+              <Sun size={11} className="text-emerald-400" />
+              <span>Экран активен</span>
+            </span>
+          )}
+          <button
+            onClick={onClose}
+            className="text-[#8E8E93] hover:text-white transition-colors p-2 rounded-full hover:bg-[#2C2C2E] cursor-pointer"
+          >
+            <X size={18} />
+          </button>
+        </div>
 
         {/* Header */}
         <div className="flex items-center gap-3.5">
@@ -273,7 +289,13 @@ export const WorkoutModal: React.FC<WorkoutModalProps> = ({
             {/* Countdown Display */}
             <div className="relative flex flex-col items-center justify-center w-48 h-48 rounded-full bg-[#2C2C2E]">
               <Clock size={22} className="text-[#0A84FF] mb-1" />
-              <div className="text-4xl font-bold text-white tracking-tight">
+              <div
+                className={`text-4xl font-bold tracking-tight transition-all duration-200 ${
+                  session.remainingRest <= 3 && session.remainingRest > 0 && !session.isRestPaused
+                    ? 'text-[#FF9F0A] scale-110 animate-pulse'
+                    : 'text-white'
+                }`}
+              >
                 {formatSeconds(session.remainingRest)}
               </div>
               <span className="text-xs font-semibold text-[#8E8E93] uppercase tracking-wider mt-1">

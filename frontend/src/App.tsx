@@ -69,7 +69,14 @@ export function App() {
     weight_kg?: number
   } | undefined>(undefined)
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
-  const [activeWorkout, setActiveWorkout] = useState<WorkoutSessionPlan | null>(null)
+  const [activeWorkout, setActiveWorkout] = useState<WorkoutSessionPlan | null>(() => {
+    try {
+      const saved = localStorage.getItem('gc_body_active_workout')
+      return saved ? JSON.parse(saved) : null
+    } catch {
+      return null
+    }
+  })
   const [finishedWorkoutPlan, setFinishedWorkoutPlan] = useState<WorkoutSessionPlan | null>(null)
   const [lastCompletedSets, setLastCompletedSets] = useState<number[]>([])
   const [isFinishingWorkout, setIsFinishingWorkout] = useState(false)
@@ -209,6 +216,18 @@ export function App() {
       console.error('Failed saving history to localStorage', e)
     }
   }, [workoutHistory])
+
+  useEffect(() => {
+    try {
+      if (activeWorkout) {
+        localStorage.setItem('gc_body_active_workout', JSON.stringify(activeWorkout))
+      } else {
+        localStorage.removeItem('gc_body_active_workout')
+      }
+    } catch (e) {
+      console.error('Failed saving active workout to localStorage', e)
+    }
+  }, [activeWorkout])
 
   const fetchUserDisciplines = async (userId: string) => {
     try {

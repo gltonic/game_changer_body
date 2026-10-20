@@ -5,38 +5,19 @@ import {
   type WorkoutSessionCallbacks
 } from './workoutSession'
 import type { WorkoutSessionPlan } from './progression'
+import {
+  unlockAudio,
+  playRestCompleteChime,
+  playCountdownPip,
+  playSetCompleteChime,
+  triggerVibration
+} from './soundAlerts'
 
+export { unlockAudio, triggerVibration }
+
+// Exported for backward compatibility
 export function playBeep() {
-  try {
-    const AudioCtx = window.AudioContext || (window as any).webkitAudioContext
-    if (!AudioCtx) return
-    const ctx = new AudioCtx()
-    const osc = ctx.createOscillator()
-    const gain = ctx.createGain()
-
-    osc.type = 'sine'
-    osc.frequency.setValueAtTime(880, ctx.currentTime) // A5 note
-    gain.gain.setValueAtTime(0.3, ctx.currentTime)
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4)
-
-    osc.connect(gain)
-    gain.connect(ctx.destination)
-
-    osc.start()
-    osc.stop(ctx.currentTime + 0.4)
-  } catch (e) {
-    // Audio context may be restricted by browser until first interaction
-  }
-}
-
-export function triggerVibration(pattern: number | number[] = [200, 100, 200]) {
-  if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-    try {
-      navigator.vibrate(pattern)
-    } catch (e) {
-      // Ignore vibration error
-    }
-  }
+  playRestCompleteChime()
 }
 
 export function useWorkoutSession(
@@ -48,25 +29,52 @@ export function useWorkoutSession(
 
   // Stable key: ONLY re-create manager if switching to a different workout session
   const planKey = `${plan.discipline}-${plan.workoutIndex}`
+  const storageKey = `gc_workout_state_${planKey}`
 
   const manager = useMemo(() => {
-    return createWorkoutSessionManager(plan, {
-      onRestComplete: () => {
-        playBeep()
-        triggerVibration([300, 150, 300])
-        callbacksRef.current?.onRestComplete?.()
-      },
-      onSetTimerComplete: () => {
-        playBeep()
-        triggerVibration([200, 100, 200])
-        callbacksRef.current?.onSetTimerComplete?.()
-      },
-      onWorkoutComplete: (completedSets) => {
-        callbacksRef.current?.onWorkoutComplete?.(completedSets)
+    let savedState: any = null
+    try {
+      const raw = localStorage.getItem(storageKey)
+      if (raw) {
+        savedState = JSON.parse(raw)
       }
-    })
+    } catch {
+      // Ignore parse error
+    }
+
+    const m = createWorkoutSessionManager(
+      plan,
+      {
+        onRestComplete: () => {
+          playRestCompleteChime()
+          callbacksRef.current?.onRestComplete?.()
+        },
+        onSetTimerComplete: () => {
+          playSetCompleteChime()
+          callbacksRef.current?.onSetTimerComplete?.()
+        },
+        onCountdownPip: (secondsLeft) => {
+          playCountdownPip()
+          callbacksRef.current?.onCountdownPip?.(secondsLeft)
+        },
+        onWorkoutComplete: (completedSets) => {
+          try {
+            localStorage.removeItem(storageKey)
+          } catch {}
+          callbacksRef.current?.onWorkoutComplete?.(completedSets)
+        }
+      },
+      savedState
+    )
+
+    // If restored from storage while resting or in set, catch up to current wall-clock time
+    if (savedState && (savedState.status === 'resting' || savedState.status === 'in_set')) {
+      m.syncWithCurrentTime()
+    }
+
+    return m
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [planKey])
+  }, [planKey, storageKey])
 
   const [state, setState] = useState<WorkoutSessionState>(() => manager.getState())
 
@@ -74,7 +82,36 @@ export function useWorkoutSession(
     setState(manager.getState())
     return manager.subscribe((newState) => {
       setState(newState)
+      try {
+        if (newState.status === 'completed') {
+          localStorage.removeItem(storageKey)
+        } else if (newState.status !== 'idle') {
+          localStorage.setItem(storageKey, JSON.stringify({ ...newState, savedAt: Date.now() }))
+        }
+      } catch {
+        // Ignore localStorage quota errors
+      }
     })
+  }, [manager, storageKey])
+
+  // Synchronize timers when returning from background / phone unlock
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        manager.syncWithCurrentTime()
+      }
+    }
+    const handleFocus = () => {
+      manager.syncWithCurrentTime()
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('focus', handleFocus)
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('focus', handleFocus)
+    }
   }, [manager])
 
   // Timer interval for in-set timer and rest period
@@ -94,17 +131,68 @@ export function useWorkoutSession(
     return () => clearInterval(timer)
   }, [manager, state.status, state.isRestPaused, state.isSetPaused])
 
+  const startWorkout = () => {
+    unlockAudio()
+    manager.startWorkout()
+  }
+
+  const completeCurrentSet = (countOverride?: number) => {
+    unlockAudio()
+    manager.completeCurrentSet(countOverride)
+  }
+
+  const addRestTime = (seconds: number) => {
+    unlockAudio()
+    manager.addRestTime(seconds)
+  }
+
+  const setRemainingRest = (seconds: number) => {
+    unlockAudio()
+    manager.setRemainingRest(seconds)
+  }
+
+  const skipRest = () => {
+    unlockAudio()
+    manager.skipRest()
+  }
+
+  const togglePauseRest = () => {
+    unlockAudio()
+    manager.togglePauseRest()
+  }
+
+  const togglePauseSetTimer = () => {
+    unlockAudio()
+    manager.togglePauseSetTimer()
+  }
+
+  const addSetTime = (seconds: number) => {
+    unlockAudio()
+    manager.addSetTime(seconds)
+  }
+
+  const setActualCount = (count: number) => {
+    unlockAudio()
+    manager.setActualCount(count)
+  }
+
+  const adjustActualCount = (delta: number) => {
+    unlockAudio()
+    manager.adjustActualCount(delta)
+  }
+
   return {
     ...state,
-    startWorkout: manager.startWorkout,
-    completeCurrentSet: manager.completeCurrentSet,
-    addRestTime: manager.addRestTime,
-    setRemainingRest: manager.setRemainingRest,
-    skipRest: manager.skipRest,
-    togglePauseRest: manager.togglePauseRest,
-    togglePauseSetTimer: manager.togglePauseSetTimer,
-    addSetTime: manager.addSetTime,
-    setActualCount: manager.setActualCount,
-    adjustActualCount: manager.adjustActualCount
+    startWorkout,
+    completeCurrentSet,
+    addRestTime,
+    setRemainingRest,
+    skipRest,
+    togglePauseRest,
+    togglePauseSetTimer,
+    addSetTime,
+    setActualCount,
+    adjustActualCount,
+    syncWithCurrentTime: manager.syncWithCurrentTime
   }
 }

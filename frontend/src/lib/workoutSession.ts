@@ -19,6 +19,7 @@ export interface WorkoutSessionCallbacks {
   onRestComplete?: () => void
   onSetTimerComplete?: () => void
   onWorkoutComplete?: (completedSets: number[]) => void
+  onCountdownPip?: (secondsLeft: number) => void
 }
 
 export interface WorkoutSessionManager {
@@ -27,10 +28,11 @@ export interface WorkoutSessionManager {
   completeCurrentSet: (countOverride?: number) => void
   addRestTime: (seconds: number) => void
   setRemainingRest: (seconds: number) => void
-  tickRest: () => void
+  tickRest: (now?: number) => void
+  syncWithCurrentTime: (now?: number) => void
   skipRest: () => void
   togglePauseRest: () => void
-  tickSetTimer: () => void
+  tickSetTimer: (now?: number) => void
   togglePauseSetTimer: () => void
   addSetTime: (seconds: number) => void
   setActualCount: (count: number) => void
@@ -40,22 +42,27 @@ export interface WorkoutSessionManager {
 
 export function createWorkoutSessionManager(
   plan: WorkoutSessionPlan,
-  callbacks?: WorkoutSessionCallbacks
+  callbacks?: WorkoutSessionCallbacks,
+  initialState?: (Partial<WorkoutSessionState> & { savedAt?: number }) | null
 ): WorkoutSessionManager {
   const isTimeBased = plan.unit === 'seconds'
-  const firstTarget = plan.sets[0] || 0
+  const initialIndex = initialState?.currentSetIndex ?? 0
+  const currentTarget = plan.sets[initialIndex] || 0
+
+  let lastRestTickAt: number = initialState?.savedAt ?? Date.now()
+  let lastSetTickAt: number = initialState?.savedAt ?? Date.now()
 
   let state: WorkoutSessionState = {
-    status: 'idle',
-    currentSetIndex: 0,
-    completedSets: [],
-    remainingRest: plan.restSeconds || 120,
-    isRestPaused: false,
+    status: initialState?.status || 'idle',
+    currentSetIndex: initialIndex,
+    completedSets: initialState?.completedSets ?? [],
+    remainingRest: initialState?.remainingRest ?? (plan.restSeconds || 120),
+    isRestPaused: initialState?.isRestPaused ?? false,
     totalSets: plan.sets.length,
-    activeSetSeconds: isTimeBased ? firstTarget : 0,
-    isSetPaused: false,
-    currentSetTarget: firstTarget,
-    currentSetActual: firstTarget
+    activeSetSeconds: initialState?.activeSetSeconds ?? (isTimeBased ? currentTarget : 0),
+    isSetPaused: initialState?.isSetPaused ?? false,
+    currentSetTarget: initialState?.currentSetTarget ?? currentTarget,
+    currentSetActual: initialState?.currentSetActual ?? currentTarget
   }
 
   const listeners = new Set<(state: WorkoutSessionState) => void>()
@@ -71,6 +78,7 @@ export function createWorkoutSessionManager(
     state.currentSetActual = target
     state.activeSetSeconds = isTimeBased ? target : 0
     state.isSetPaused = false
+    lastSetTickAt = Date.now()
   }
 
   return {
@@ -82,21 +90,67 @@ export function createWorkoutSessionManager(
       notify()
     },
 
-    tickSetTimer: () => {
+    syncWithCurrentTime: (now: number = Date.now()) => {
+      if (state.status === 'resting' && !state.isRestPaused) {
+        const elapsedMs = Math.max(0, now - lastRestTickAt)
+        const deltaSec = Math.floor(elapsedMs / 1000)
+        if (deltaSec >= 1) {
+          lastRestTickAt = now
+          if (state.remainingRest > deltaSec) {
+            state.remainingRest -= deltaSec
+            if (state.remainingRest <= 3) {
+              callbacks?.onCountdownPip?.(state.remainingRest)
+            }
+            notify()
+          } else {
+            state.remainingRest = 0
+            state.status = 'in_set'
+            initSet(state.currentSetIndex + 1)
+            notify()
+            callbacks?.onRestComplete?.()
+          }
+        }
+      } else if (state.status === 'in_set' && !state.isSetPaused) {
+        const elapsedMs = Math.max(0, now - lastSetTickAt)
+        const deltaSec = Math.floor(elapsedMs / 1000)
+        if (deltaSec >= 1) {
+          lastSetTickAt = now
+          if (isTimeBased) {
+            if (state.activeSetSeconds > deltaSec) {
+              state.activeSetSeconds -= deltaSec
+              notify()
+            } else {
+              state.activeSetSeconds = 0
+              notify()
+              callbacks?.onSetTimerComplete?.()
+            }
+          } else {
+            state.activeSetSeconds += deltaSec
+            notify()
+          }
+        }
+      }
+    },
+
+    tickSetTimer: (now: number = Date.now()) => {
       if (state.status !== 'in_set' || state.isSetPaused) return
 
+      const elapsedMs = Math.max(0, now - lastSetTickAt)
+      const deltaSec = elapsedMs >= 1500 ? Math.floor(elapsedMs / 1000) : 1
+      lastSetTickAt = now
+
       if (isTimeBased) {
-        if (state.activeSetSeconds > 1) {
-          state.activeSetSeconds -= 1
+        if (state.activeSetSeconds > deltaSec) {
+          state.activeSetSeconds -= deltaSec
           notify()
-        } else if (state.activeSetSeconds === 1) {
+        } else {
           state.activeSetSeconds = 0
           notify()
           callbacks?.onSetTimerComplete?.()
         }
       } else {
         // Stopwatch for reps
-        state.activeSetSeconds += 1
+        state.activeSetSeconds += deltaSec
         notify()
       }
     },
@@ -104,6 +158,7 @@ export function createWorkoutSessionManager(
     togglePauseSetTimer: () => {
       if (state.status !== 'in_set') return
       state.isSetPaused = !state.isSetPaused
+      lastSetTickAt = Date.now()
       notify()
     },
 
@@ -111,6 +166,7 @@ export function createWorkoutSessionManager(
       if (state.status !== 'in_set') return
       state.activeSetSeconds += seconds
       state.currentSetActual = Math.max(state.currentSetActual, state.activeSetSeconds)
+      lastSetTickAt = Date.now()
       notify()
     },
 
@@ -140,6 +196,7 @@ export function createWorkoutSessionManager(
         state.status = 'resting'
         state.remainingRest = plan.restSeconds || 120
         state.isRestPaused = false
+        lastRestTickAt = Date.now()
         notify()
       }
     },
@@ -147,19 +204,28 @@ export function createWorkoutSessionManager(
     addRestTime: (seconds: number) => {
       if (state.status !== 'resting') return
       state.remainingRest += seconds
+      lastRestTickAt = Date.now()
       notify()
     },
 
     setRemainingRest: (seconds: number) => {
       state.remainingRest = Math.max(0, seconds)
+      lastRestTickAt = Date.now()
       notify()
     },
 
-    tickRest: () => {
+    tickRest: (now: number = Date.now()) => {
       if (state.status !== 'resting' || state.isRestPaused) return
 
-      if (state.remainingRest > 1) {
-        state.remainingRest -= 1
+      const elapsedMs = Math.max(0, now - lastRestTickAt)
+      const deltaSec = elapsedMs >= 1500 ? Math.floor(elapsedMs / 1000) : 1
+      lastRestTickAt = now
+
+      if (state.remainingRest > deltaSec) {
+        state.remainingRest -= deltaSec
+        if (state.remainingRest <= 3) {
+          callbacks?.onCountdownPip?.(state.remainingRest)
+        }
         notify()
       } else {
         // Rest completed
@@ -182,6 +248,7 @@ export function createWorkoutSessionManager(
     togglePauseRest: () => {
       if (state.status !== 'resting') return
       state.isRestPaused = !state.isRestPaused
+      lastRestTickAt = Date.now()
       notify()
     },
 
