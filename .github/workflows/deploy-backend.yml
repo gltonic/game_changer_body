@@ -39,12 +39,12 @@ jobs:
             # 2. Определение рабочей папки проекта
             TARGET_DIR="${{ secrets.VPS_PROJECT_DIR }}"
             if [ -z "$TARGET_DIR" ]; then
-              if [ -d "$HOME/game_changer" ]; then
+              if [ -d "$HOME/game_changer_body" ]; then
+                TARGET_DIR="$HOME/game_changer_body"
+              elif [ -d "/var/www/game_changer_body" ]; then
+                TARGET_DIR="/var/www/game_changer_body"
+              elif [ -d "$HOME/game_changer" ]; then
                 TARGET_DIR="$HOME/game_changer"
-              elif [ -d "$HOME/game_changer_tg_mini_apps" ]; then
-                TARGET_DIR="$HOME/game_changer_tg_mini_apps"
-              elif [ -d "/var/www/game_changer" ]; then
-                TARGET_DIR="/var/www/game_changer"
               else
                 TARGET_DIR="$PWD"
               fi
@@ -61,7 +61,7 @@ jobs:
               git reset --hard origin/main
             else
               echo "⚠️ Git-репозиторий не инициализирован. Клонируем проект..."
-              git clone https://github.com/gltonic/game_changer.git temp_repo
+              git clone https://github.com/gltonic/game_changer_body.git temp_repo
               cp -r temp_repo/. .
               rm -rf temp_repo
             fi
@@ -72,32 +72,34 @@ jobs:
               cd backend || exit 1
             fi
 
-            # 5. Создаем/обновляем .env файл
+            # 5. Создаем/обновляем .env файл если его нет или дополняем
             echo "⚙️ Запись файла конфигурации .env..."
-            cat << 'EOF' > .env
-            TELEGRAM_BOT_TOKEN=8416333905:AAFkz4luIGu1evvFEJhQZuCVW-4LwlO1WwY
-            SUPABASE_URL=https://uhowccknbtavymbygksz.supabase.co
-            SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVob3djY2tuYnRhdnltYnlna3N6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc5MTExMzY0MCwiZXhwIjoyMTA2Njg5NjQwfQ.gFuVFP3SNBdEFyhyWXitjFM9OjiV4IUiZQp3egIjY60
-            MINI_APP_URL=https://gamechanger-zeta.vercel.app/
-            EOF
-            sed -i 's/^[ \t]*//' .env
+            if [ ! -f ".env" ]; then
+              cat << 'EOF' > .env
+PORT=3001
+CLIENT_URL=*
+SUPABASE_URL=https://mnxsuolapkigfqeokdde.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1ueHN1b2xhcGtpZ2ZxZW9rZGRlIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc5MjA3MTUxNSwiZXhwIjoyMTA3NjQ3NTE1fQ.4bm1dgtW6CpRD0a7nVrpS5381L-ChhkvzLLdfOOcfpE
+EOF
+              sed -i 's/^[ \t]*//' .env
+            fi
 
             echo "📦 Установка зависимостей Node.js..."
             npm install
 
-            APP_NAME="${{ secrets.PM2_APP_NAME || 'bot' }}"
+            echo "🔨 Сборка backend..."
+            npm run build
+
+            APP_NAME="${{ secrets.PM2_APP_NAME || 'gc-body-backend' }}"
             echo "📋 Текущие процессы PM2:"
             pm2 list || true
 
-            echo "🧹 Очистка старых/дублирующих процессов PM2..."
-            pm2 delete all || true
-
-            echo "🚀 Запуск чистого процесса $APP_NAME..."
-            pm2 start src/index.js --name "$APP_NAME"
+            echo "🚀 Перезапуск процесса $APP_NAME..."
+            pm2 restart "$APP_NAME" || pm2 start src/index.js --name "$APP_NAME"
             pm2 save
 
-            sleep 4
-            echo "📄 Логи запуска бота:"
+            sleep 3
+            echo "📄 Логи запуска:"
             pm2 logs "$APP_NAME" --lines 30 --nostream || true
 
             echo "📋 Итоговый статус PM2:"
