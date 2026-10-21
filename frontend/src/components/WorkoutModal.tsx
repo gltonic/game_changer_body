@@ -11,10 +11,12 @@ import {
   Clock,
   Timer as TimerIcon,
   Sparkles,
-  Sun
+  Sun,
+  Volume2
 } from 'lucide-react'
 import { useWorkoutSession } from '../lib/useWorkoutSession'
 import { useWakeLock } from '../lib/useWakeLock'
+import { testSoundAlert } from '../lib/soundAlerts'
 import type { WorkoutSessionPlan } from '../lib/progression'
 import { DISCIPLINES_META } from './DisciplineBar'
 
@@ -74,6 +76,15 @@ export const WorkoutModal: React.FC<WorkoutModalProps> = ({
               <span>Экран активен</span>
             </span>
           )}
+          <button
+            type="button"
+            onClick={testSoundAlert}
+            title="Проверить громкость и звук таймера"
+            className="flex items-center gap-1 text-[11px] font-medium text-white/80 hover:text-white bg-[#2C2C2E] hover:bg-[#3A3A3C] px-2.5 py-1 rounded-full transition-colors active:scale-95 cursor-pointer"
+          >
+            <Volume2 size={12} className="text-[#0A84FF]" />
+            <span>Тест звука</span>
+          </button>
           <button
             onClick={onClose}
             className="text-[#8E8E93] hover:text-white transition-colors p-2 rounded-full hover:bg-[#2C2C2E] cursor-pointer"

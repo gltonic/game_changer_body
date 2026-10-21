@@ -6,7 +6,8 @@ import {
   Download,
   LayoutDashboard,
   Map,
-  Bell
+  Bell,
+  Cloud
 } from 'lucide-react'
 import { DisciplineBar, DISCIPLINES_META } from './components/DisciplineBar'
 import { OnboardingModal } from './components/OnboardingModal'
@@ -18,6 +19,16 @@ import { AuthModal } from './components/AuthModal'
 import { MainDashboard, type DisciplineData } from './components/MainDashboard'
 import { supabase } from './lib/supabase'
 import { getCurrentUser, signOut } from './lib/auth'
+import {
+  getDeviceId,
+  saveLocalDisciplines,
+  loadLocalDisciplines,
+  fetchDisciplinesFromCloud,
+  saveDisciplineToCloud,
+  deleteDisciplineFromCloud,
+  migrateGuestDataToUser,
+  saveHistoryToCloud
+} from './lib/storage'
 import {
   applyWorkoutAdaptiveProgression,
   type Discipline,
@@ -90,12 +101,14 @@ export function App() {
   }
 
   const handleDeleteTrail = async (discipline: Discipline) => {
+    const activeId = currentUser?.id || getDeviceId()
     setUserDisciplines((prev) => {
       const copy = { ...prev }
       delete copy[discipline]
-      localStorage.setItem('gc_body_disciplines', JSON.stringify(copy))
+      saveLocalDisciplines(copy)
       return copy
     })
+    deleteDisciplineFromCloud(BACKEND_URL, activeId, discipline)
     showToast(`✓ Тропа «${DISCIPLINES_META[discipline].label}» удалена`)
 
     if (currentUser?.id) {
@@ -135,12 +148,14 @@ export function App() {
       current_workout_index: 0
     }
 
+    const activeId = currentUser?.id || getDeviceId()
     setUserDisciplines((prev) => {
       const copy = { ...prev, [discipline]: updated }
-      localStorage.setItem('gc_body_disciplines', JSON.stringify(copy))
+      saveLocalDisciplines(copy)
       return copy
     })
 
+    saveDisciplineToCloud(BACKEND_URL, activeId, discipline, updated)
     showToast(`✓ Прогресс тропы «${DISCIPLINES_META[discipline].label}» сброшен к началу`)
 
     if (currentUser?.id) {
@@ -171,7 +186,24 @@ export function App() {
     return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstall)
   }, [])
 
-  // Check Supabase auth state on load
+  // 1. Restore from IndexedDB on startup if localStorage was wiped by OS/update
+  useEffect(() => {
+    loadLocalDisciplines().then((saved) => {
+      if (saved && Object.keys(saved).length > 0) {
+        setUserDisciplines((prev) => {
+          const merged = { ...saved }
+          for (const [disc, data] of Object.entries(prev)) {
+            if (!merged[disc] || data.current_workout_index > merged[disc].current_workout_index) {
+              merged[disc] = data
+            }
+          }
+          return merged
+        })
+      }
+    })
+  }, [])
+
+  // 2. Check Supabase auth state on load
   useEffect(() => {
     getCurrentUser()
       .then((user) => {
@@ -185,9 +217,12 @@ export function App() {
 
     const {
       data: { subscription }
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session?.user) {
         setCurrentUser(session.user)
+        // Automatically migrate guest/device progress to newly logged in account
+        const deviceId = getDeviceId()
+        await migrateGuestDataToUser(BACKEND_URL, deviceId, session.user.id)
         fetchUserDisciplines(session.user.id)
         fetchWorkoutHistory(session.user.id)
       } else {
@@ -200,13 +235,47 @@ export function App() {
     }
   }, [])
 
-  // Save disciplines & history to localStorage as backup
+  // 3. Continuous Cloud Sync for both guests and authenticated users
   useEffect(() => {
-    try {
-      localStorage.setItem('gc_body_disciplines', JSON.stringify(userDisciplines))
-    } catch (e) {
-      console.error('Failed saving to localStorage', e)
+    let isCancelled = false
+    const syncFromCloud = async () => {
+      const activeId = currentUser?.id || getDeviceId()
+      const cloudDisciplines = await fetchDisciplinesFromCloud(BACKEND_URL, activeId)
+
+      if (isCancelled) return
+
+      if (cloudDisciplines && Object.keys(cloudDisciplines).length > 0) {
+        setUserDisciplines((prev) => {
+          const merged = { ...prev }
+          for (const [disc, cloudData] of Object.entries(cloudDisciplines)) {
+            const local = prev[disc]
+            if (!local || cloudData.current_workout_index >= local.current_workout_index) {
+              merged[disc] = cloudData
+            } else if (local && local.current_workout_index > cloudData.current_workout_index) {
+              // Local is ahead, sync forward to cloud
+              saveDisciplineToCloud(BACKEND_URL, activeId, disc, local)
+            }
+          }
+          saveLocalDisciplines(merged)
+          return merged
+        })
+      } else {
+        // If cloud is empty for this device/user, upload local trails to cloud
+        for (const [disc, localData] of Object.entries(userDisciplines)) {
+          saveDisciplineToCloud(BACKEND_URL, activeId, disc, localData)
+        }
+      }
     }
+
+    syncFromCloud()
+    return () => {
+      isCancelled = true
+    }
+  }, [currentUser?.id])
+
+  // Save disciplines to IndexedDB and LocalStorage on change
+  useEffect(() => {
+    saveLocalDisciplines(userDisciplines)
   }, [userDisciplines])
 
   useEffect(() => {
@@ -286,15 +355,19 @@ export function App() {
       trail_data: trail
     }
 
-    setUserDisciplines((prev) => ({
-      ...prev,
-      [discipline]: data
-    }))
+    setUserDisciplines((prev) => {
+      const copy = { ...prev, [discipline]: data }
+      saveLocalDisciplines(copy)
+      return copy
+    })
     setCurrentDiscipline(discipline)
     setIsOnboardingOpen(false)
-    showToast(`✓ Тропа для «${DISCIPLINES_META[discipline].label}» рассчитана!`)
+    showToast(`✓ Тропа «${DISCIPLINES_META[discipline].label}» рассчитана и сохранена!`)
 
-    // Sync to Supabase if authenticated
+    const activeId = currentUser?.id || getDeviceId()
+    saveDisciplineToCloud(BACKEND_URL, activeId, discipline, data)
+
+    // Sync directly to Supabase if authenticated
     if (currentUser?.id) {
       try {
         await supabase.from('user_disciplines').upsert(
@@ -354,10 +427,11 @@ export function App() {
       trail_data: updatedTrail
     }
 
-    setUserDisciplines((prev) => ({
-      ...prev,
-      [workoutDiscipline]: updatedData
-    }))
+    setUserDisciplines((prev) => {
+      const copy = { ...prev, [workoutDiscipline]: updatedData }
+      saveLocalDisciplines(copy)
+      return copy
+    })
     setIsFinishingWorkout(false)
 
     // Append to local history
@@ -378,14 +452,18 @@ export function App() {
       showToast('✓ Тренировка успешно зафиксирована!')
     }
 
-    const userId = currentUser?.id || 'local_user'
+    const activeId = currentUser?.id || getDeviceId()
+
+    // 1. Sync discipline and history to cloud (works for guest devices and auth users)
+    saveDisciplineToCloud(BACKEND_URL, activeId, workoutDiscipline, updatedData)
+    saveHistoryToCloud(BACKEND_URL, activeId, historyItem)
 
     // Schedule Push Notification if requested
     if (nextWorkoutDate) {
       try {
-        await subscribeToPush(BACKEND_URL, userId)
+        await subscribeToPush(BACKEND_URL, activeId)
         await schedulePushNotification(BACKEND_URL, {
-          userId,
+          userId: activeId,
           targetTime: nextWorkoutDate,
           title: 'Game Changer: Body 🎯',
           body: `Время для ${DISCIPLINES_META[workoutDiscipline].label}! Тренировка #${nextIndex + 1} ждет.`
@@ -395,7 +473,7 @@ export function App() {
       }
     }
 
-    // Save to Supabase
+    // Direct Supabase sync if user is signed in
     if (currentUser?.id) {
       try {
         await supabase.from('user_disciplines').upsert({
@@ -424,9 +502,9 @@ export function App() {
   }
 
   const handleSendTestPush = async () => {
-    const userId = currentUser?.id || 'local_user'
+    const activeId = currentUser?.id || getDeviceId()
     try {
-      await sendTestPush(BACKEND_URL, userId)
+      await sendTestPush(BACKEND_URL, activeId)
       showToast('🔔 Тестовый пуш отправлен на устройство!')
     } catch (e) {
       showToast('Включи уведомления в центре настроек')
@@ -467,9 +545,18 @@ export function App() {
               GC
             </div>
             <div>
-              <h1 className="text-xs font-bold tracking-tight uppercase text-white">
-                Game Changer
-              </h1>
+              <div className="flex items-center gap-1.5">
+                <h1 className="text-xs font-bold tracking-tight uppercase text-white">
+                  Game Changer
+                </h1>
+                <span
+                  title="Прогресс синхронизируется с облаком"
+                  className="flex items-center gap-1 text-[9px] font-semibold text-[#30D158] bg-[#30D158]/10 px-1.5 py-0.5 rounded-full"
+                >
+                  <Cloud size={9} />
+                  <span>Облако</span>
+                </span>
+              </div>
               <span className="text-[10px] text-[#8E8E93] tracking-wide uppercase block -mt-0.5 font-medium">
                 Body
               </span>

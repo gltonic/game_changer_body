@@ -122,4 +122,86 @@ describe('Backend Push Server & Scheduler API', () => {
     expect(mockSend).toHaveBeenCalled()
     mockSend.mockRestore()
   })
+
+  it('GET /api/disciplines/:userId returns mapped user disciplines', async () => {
+    mockSupabase.from = vi.fn(() => ({
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockResolvedValue({
+        data: [
+          {
+            discipline: 'pullups',
+            max_baseline: 10,
+            weight_kg: null,
+            total_workouts: 30,
+            current_workout_index: 2,
+            trail_data: [{ workoutIndex: 1 }]
+          }
+        ],
+        error: null
+      })
+    }))
+
+    const res = await request(app).get('/api/disciplines/user-123')
+    expect(res.status).toBe(200)
+    expect(res.body.disciplines.pullups).toBeDefined()
+    expect(res.body.disciplines.pullups.max_baseline).toBe(10)
+    expect(res.body.disciplines.pullups.current_workout_index).toBe(2)
+  })
+
+  it('POST /api/disciplines saves discipline data', async () => {
+    mockSupabase.from = vi.fn(() => ({
+      upsert: vi.fn().mockReturnValue({
+        select: vi.fn().mockResolvedValue({ data: [{ id: 'disc-1' }], error: null })
+      })
+    }))
+
+    const payload = {
+      userId: 'device-123',
+      discipline: 'pushups',
+      maxBaseline: 25,
+      totalWorkouts: 45,
+      currentWorkoutIndex: 1,
+      trailData: [{ workoutIndex: 1 }]
+    }
+
+    const res = await request(app).post('/api/disciplines').send(payload)
+    expect(res.status).toBe(200)
+    expect(res.body.success).toBe(true)
+  })
+
+  it('POST /api/disciplines/migrate transfers data from guest to user', async () => {
+    const mockGuestDisciplines = [
+      {
+        discipline: 'pushups',
+        max_baseline: 20,
+        weight_kg: null,
+        total_workouts: 30,
+        current_workout_index: 3,
+        trail_data: []
+      }
+    ]
+
+    mockSupabase.from = vi.fn((table: string) => {
+      if (table === 'user_disciplines') {
+        return {
+          select: vi.fn().mockReturnThis(),
+          eq: vi.fn().mockResolvedValue({ data: mockGuestDisciplines, error: null }),
+          upsert: vi.fn().mockResolvedValue({ error: null })
+        }
+      }
+      return {
+        update: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockResolvedValue({ error: null })
+      }
+    })
+
+    const res = await request(app).post('/api/disciplines/migrate').send({
+      fromUserId: 'guest-device-1',
+      toUserId: 'auth-user-999'
+    })
+
+    expect(res.status).toBe(200)
+    expect(res.body.success).toBe(true)
+    expect(res.body.migratedCount).toBe(1)
+  })
 })

@@ -215,6 +215,213 @@ export function createApp(config: ServerConfig) {
     }
   })
 
+  // ================= DISCIPLINES & CLOUD SYNC =================
+
+  // Get user disciplines (works for both auth users and device IDs)
+  app.get('/api/disciplines/:userId', async (req: Request, res: Response) => {
+    try {
+      const { userId } = req.params
+      const { data, error } = await supabase
+        .from('user_disciplines')
+        .select('*')
+        .eq('user_id', userId)
+
+      if (error) {
+        res.status(500).json({ error: error.message })
+        return
+      }
+
+      const mapped: Record<string, any> = {}
+      if (data) {
+        for (const item of data) {
+          mapped[item.discipline] = {
+            max_baseline: Number(item.max_baseline),
+            weight_kg: item.weight_kg != null ? Number(item.weight_kg) : undefined,
+            total_workouts: item.total_workouts,
+            current_workout_index: item.current_workout_index,
+            trail_data: item.trail_data
+          }
+        }
+      }
+
+      res.json({ disciplines: mapped })
+    } catch (err: any) {
+      res.status(500).json({ error: err.message })
+    }
+  })
+
+  // Upsert user discipline
+  app.post('/api/disciplines', async (req: Request, res: Response) => {
+    try {
+      const {
+        userId,
+        discipline,
+        maxBaseline,
+        weightKg,
+        totalWorkouts,
+        currentWorkoutIndex,
+        trailData
+      } = req.body
+
+      if (!userId || !discipline || maxBaseline == null || totalWorkouts == null || !trailData) {
+        res.status(400).json({ error: 'Missing required discipline parameters' })
+        return
+      }
+
+      const { data, error } = await supabase
+        .from('user_disciplines')
+        .upsert(
+          {
+            user_id: userId,
+            discipline,
+            max_baseline: maxBaseline,
+            weight_kg: weightKg != null ? weightKg : null,
+            total_workouts: totalWorkouts,
+            current_workout_index: currentWorkoutIndex || 0,
+            trail_data: trailData,
+            updated_at: new Date().toISOString()
+          },
+          { onConflict: 'user_id,discipline' }
+        )
+        .select()
+
+      if (error) {
+        res.status(500).json({ error: error.message })
+        return
+      }
+
+      res.json({ success: true, record: data?.[0] })
+    } catch (err: any) {
+      res.status(500).json({ error: err.message })
+    }
+  })
+
+  // Delete a discipline
+  app.delete('/api/disciplines/:userId/:discipline', async (req: Request, res: Response) => {
+    try {
+      const { userId, discipline } = req.params
+      const { error } = await supabase
+        .from('user_disciplines')
+        .delete()
+        .eq('user_id', userId)
+        .eq('discipline', discipline)
+
+      if (error) {
+        res.status(500).json({ error: error.message })
+        return
+      }
+
+      res.json({ success: true })
+    } catch (err: any) {
+      res.status(500).json({ error: err.message })
+    }
+  })
+
+  // Migrate guest/device disciplines and history to authenticated user
+  app.post('/api/disciplines/migrate', async (req: Request, res: Response) => {
+    try {
+      const { fromUserId, toUserId } = req.body
+      if (!fromUserId || !toUserId || fromUserId === toUserId) {
+        res.status(400).json({ error: 'Valid fromUserId and toUserId required' })
+        return
+      }
+
+      // 1. Fetch source disciplines
+      const { data: sourceDisciplines } = await supabase
+        .from('user_disciplines')
+        .select('*')
+        .eq('user_id', fromUserId)
+
+      if (sourceDisciplines && sourceDisciplines.length > 0) {
+        for (const item of sourceDisciplines) {
+          await supabase.from('user_disciplines').upsert(
+            {
+              user_id: toUserId,
+              discipline: item.discipline,
+              max_baseline: item.max_baseline,
+              weight_kg: item.weight_kg,
+              total_workouts: item.total_workouts,
+              current_workout_index: item.current_workout_index,
+              trail_data: item.trail_data,
+              updated_at: new Date().toISOString()
+            },
+            { onConflict: 'user_id,discipline' }
+          )
+        }
+      }
+
+      // 2. Migrate workout history
+      await supabase
+        .from('workout_history')
+        .update({ user_id: toUserId })
+        .eq('user_id', fromUserId)
+
+      // 3. Migrate push subscriptions
+      await supabase
+        .from('push_subscriptions')
+        .update({ user_id: toUserId })
+        .eq('user_id', fromUserId)
+
+      res.json({ success: true, migratedCount: sourceDisciplines?.length || 0 })
+    } catch (err: any) {
+      res.status(500).json({ error: err.message })
+    }
+  })
+
+  // ================= WORKOUT HISTORY =================
+
+  app.get('/api/history/:userId', async (req: Request, res: Response) => {
+    try {
+      const { userId } = req.params
+      const { data, error } = await supabase
+        .from('workout_history')
+        .select('*')
+        .eq('user_id', userId)
+        .order('completed_at', { ascending: false })
+        .limit(50)
+
+      if (error) {
+        res.status(500).json({ error: error.message })
+        return
+      }
+
+      res.json({ history: data || [] })
+    } catch (err: any) {
+      res.status(500).json({ error: err.message })
+    }
+  })
+
+  app.post('/api/history', async (req: Request, res: Response) => {
+    try {
+      const { userId, discipline, workoutIndex, completedSets, feedback, completedAt } = req.body
+      if (!userId || !discipline || workoutIndex == null || !completedSets || !feedback) {
+        res.status(400).json({ error: 'Missing required history parameters' })
+        return
+      }
+
+      const { data, error } = await supabase
+        .from('workout_history')
+        .insert({
+          user_id: userId,
+          discipline,
+          workout_index: workoutIndex,
+          completed_sets: completedSets,
+          feedback,
+          completed_at: completedAt || new Date().toISOString()
+        })
+        .select()
+
+      if (error) {
+        res.status(500).json({ error: error.message })
+        return
+      }
+
+      res.json({ success: true, item: data?.[0] })
+    } catch (err: any) {
+      res.status(500).json({ error: err.message })
+    }
+  })
+
   return app
 }
 

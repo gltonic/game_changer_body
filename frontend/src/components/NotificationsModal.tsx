@@ -10,8 +10,10 @@ import {
   Plus,
   Trash2,
   RefreshCw,
-  Repeat
+  Repeat,
+  Volume2
 } from 'lucide-react'
+import { testSoundAlert } from '../lib/soundAlerts'
 import {
   subscribeToPush,
   sendTestPush,
@@ -217,6 +219,28 @@ export const NotificationsModal: React.FC<NotificationsModalProps> = ({
               <span>Тестовый пуш отправлен на экран блокировки!</span>
             </div>
           )}
+        </div>
+
+        {/* Timer Sound Test Section */}
+        <div className="p-4 rounded-2xl bg-[#2C2C2E] flex flex-col gap-2.5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Volume2 size={15} className="text-[#0A84FF]" />
+              <span className="text-xs font-semibold text-white">Звуковой сигнал таймера</span>
+            </div>
+            <span className="text-[11px] text-[#30D158] font-semibold">Web Audio + WAV</span>
+          </div>
+          <p className="text-[11px] text-[#8E8E93] leading-relaxed">
+            Сигнал окончания отдыха между подходами. На iPhone убедитесь, что боковой рычажок не стоит в режиме «Без звука».
+          </p>
+          <button
+            type="button"
+            onClick={testSoundAlert}
+            className="w-full py-2.5 rounded-2xl bg-[#3A3A3C] hover:bg-[#48484A] text-white font-semibold text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer active:scale-95"
+          >
+            <Volume2 size={14} className="text-[#0A84FF]" />
+            <span>Протестировать звук гонга</span>
+          </button>
         </div>
 
         {/* Add Reminder Card */}

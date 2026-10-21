@@ -10,10 +10,13 @@ import {
   playRestCompleteChime,
   playCountdownPip,
   playSetCompleteChime,
-  triggerVibration
+  triggerVibration,
+  startAudioKeepAlive,
+  stopAudioKeepAlive,
+  testSoundAlert
 } from './soundAlerts'
 
-export { unlockAudio, triggerVibration }
+export { unlockAudio, triggerVibration, testSoundAlert }
 
 // Exported for backward compatibility
 export function playBeep() {
@@ -130,6 +133,19 @@ export function useWorkoutSession(
 
     return () => clearInterval(timer)
   }, [manager, state.status, state.isRestPaused, state.isSetPaused])
+
+  // Maintain active audio pipeline during rest to prevent mobile OS audio suspension
+  useEffect(() => {
+    if (state.status === 'resting' && !state.isRestPaused) {
+      startAudioKeepAlive()
+    } else {
+      stopAudioKeepAlive()
+    }
+
+    return () => {
+      stopAudioKeepAlive()
+    }
+  }, [state.status, state.isRestPaused])
 
   const startWorkout = () => {
     unlockAudio()
