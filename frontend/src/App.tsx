@@ -535,64 +535,66 @@ export function App() {
       )}
 
       {/* Top Header with iOS Safe Area support */}
-      <header className="sticky top-0 z-40 bg-black/80 backdrop-blur-xl border-b border-white/5 px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-3">
-        <div className="max-w-md mx-auto flex items-center justify-between">
+      <header className="sticky top-0 z-40 bg-black/85 backdrop-blur-xl border-b border-white/5 px-4 pt-[max(0.75rem,calc(env(safe-area-inset-top)+0.25rem))] pb-2.5">
+        <div className="max-w-md mx-auto flex items-center justify-between gap-2">
+          {/* Left: Brand Logo & Title */}
           <div
             onClick={() => setActiveTab('dashboard')}
-            className="flex items-center gap-2.5 cursor-pointer"
+            className="flex items-center gap-2.5 cursor-pointer select-none min-w-0"
           >
-            <div className="w-8 h-8 rounded-xl bg-[#1C1C1E] flex items-center justify-center text-white font-bold text-xs tracking-tight">
+            <div className="relative w-8 h-8 rounded-xl bg-[#1C1C1E] border border-white/10 flex items-center justify-center text-white font-bold text-xs tracking-tight shadow-sm shrink-0">
               GC
+              <span
+                title="Синхронизировано с облаком"
+                className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-[#30D158] ring-2 ring-black"
+              />
             </div>
-            <div>
-              <div className="flex items-center gap-1.5">
-                <h1 className="text-xs font-bold tracking-tight uppercase text-white">
-                  Game Changer
-                </h1>
-                <span
-                  title="Прогресс синхронизируется с облаком"
-                  className="flex items-center gap-1 text-[9px] font-semibold text-[#30D158] bg-[#30D158]/10 px-1.5 py-0.5 rounded-full"
-                >
-                  <Cloud size={9} />
+            <div className="flex flex-col leading-tight min-w-0">
+              <h1 className="text-sm font-bold tracking-tight text-white truncate">
+                Game Changer
+              </h1>
+              <span className="text-[10px] text-[#8E8E93] font-medium tracking-wide flex items-center gap-1.5 mt-0.5">
+                <span>Body</span>
+                <span>•</span>
+                <span className="text-[#30D158] flex items-center gap-0.5 font-semibold">
+                  <Cloud size={10} strokeWidth={2.5} />
                   <span>Облако</span>
                 </span>
-              </div>
-              <span className="text-[10px] text-[#8E8E93] tracking-wide uppercase block -mt-0.5 font-medium">
-                Body
               </span>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          {/* Right: Actions */}
+          <div className="flex items-center gap-1.5 shrink-0">
             {installPrompt && (
               <button
                 onClick={handleInstallClick}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#1C1C1E] hover:bg-[#2C2C2E] text-white text-xs font-semibold transition-colors"
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-full bg-[#1C1C1E] hover:bg-[#2C2C2E] text-white text-xs font-semibold transition-colors whitespace-nowrap shrink-0"
               >
                 <Download size={13} />
-                <span>Установить</span>
+                <span className="text-[11px]">Установить</span>
               </button>
             )}
 
             <button
               onClick={() => setIsNotificationsOpen(true)}
-              className="p-2.5 rounded-full bg-[#1C1C1E] hover:bg-[#2C2C2E] text-white transition-colors relative"
+              className="w-8 h-8 rounded-full bg-[#1C1C1E] hover:bg-[#2C2C2E] text-white flex items-center justify-center transition-colors relative shrink-0"
               title="Центр уведомлений"
             >
               <Bell size={15} className={isPushActive ? 'text-[#0A84FF]' : 'text-[#8E8E93]'} />
               {isPushActive && (
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#30D158] rounded-full" />
+                <span className="absolute top-1 right-1 w-2 h-2 bg-[#30D158] rounded-full ring-2 ring-black" />
               )}
             </button>
 
             {currentUser ? (
-              <div className="flex items-center gap-1.5 bg-[#1C1C1E] rounded-full px-3 py-1.5 text-xs">
-                <span className="text-[11px] text-[#8E8E93] font-medium truncate max-w-[90px]">
+              <div className="flex items-center gap-1.5 bg-[#1C1C1E] rounded-full px-2.5 py-1 text-xs shrink-0">
+                <span className="text-[11px] text-[#8E8E93] font-medium truncate max-w-[80px]">
                   {currentUser.email?.split('@')[0]}
                 </span>
                 <button
                   onClick={() => signOut()}
-                  className="text-[#8E8E93] hover:text-[#FF453A] transition-colors ml-0.5"
+                  className="text-[#8E8E93] hover:text-[#FF453A] transition-colors ml-0.5 p-0.5"
                   title="Выйти"
                 >
                   <LogOut size={13} />
@@ -601,7 +603,7 @@ export function App() {
             ) : (
               <button
                 onClick={() => setIsAuthOpen(true)}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-[#1C1C1E] hover:bg-[#2C2C2E] text-white text-xs font-semibold transition-colors"
+                className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-[#1C1C1E] hover:bg-[#2C2C2E] text-white text-xs font-semibold transition-colors whitespace-nowrap shrink-0"
               >
                 <User size={13} className="text-[#8E8E93]" />
                 <span>Войти</span>

@@ -142,42 +142,42 @@ export const MainDashboard: React.FC<MainDashboardProps> = ({
       </section>
 
       {/* 2. Notifications Center Banner */}
-      <section className="rounded-3xl bg-[#1C1C1E] p-5 flex items-center justify-between">
-        <div className="flex items-center gap-3.5">
-          <div className="w-11 h-11 rounded-full bg-[#0A84FF]/15 text-[#0A84FF] flex items-center justify-center">
-            <Bell size={20} />
+      <section className="rounded-3xl bg-[#1C1C1E] p-4 flex items-center justify-between gap-3 overflow-hidden">
+        <div className="flex items-center gap-3 min-w-0 flex-1">
+          <div className="w-10 h-10 rounded-full bg-[#0A84FF]/15 text-[#0A84FF] flex items-center justify-center shrink-0">
+            <Bell size={18} />
           </div>
-          <div className="flex flex-col">
-            <div className="flex items-center gap-2">
+          <div className="flex flex-col min-w-0">
+            <div className="flex items-center gap-1.5 flex-wrap">
               <span className="text-sm font-bold text-white tracking-tight">Уведомления</span>
               <span
-                className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                className={`text-[9px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${
                   isPushActive
                     ? 'bg-[#30D158]/15 text-[#30D158]'
                     : 'bg-[#2C2C2E] text-[#8E8E93]'
                 }`}
               >
-                {isPushActive ? 'Активны' : 'Отключены'}
+                {isPushActive ? 'Активны' : 'Выкл'}
               </span>
             </div>
-            <span className="text-xs text-[#8E8E93] mt-0.5">
-              Напоминания о микротренировках
+            <span className="text-[11px] text-[#8E8E93] mt-0.5 truncate block">
+              Напоминания о тренировках
             </span>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 shrink-0">
           <button
             onClick={onSendTestNotification}
             title="Отправить тестовый пуш"
-            className="w-9 h-9 rounded-full bg-[#2C2C2E] hover:bg-[#3A3A3C] text-white flex items-center justify-center transition-colors cursor-pointer active:scale-95"
+            className="w-8 h-8 rounded-full bg-[#2C2C2E] hover:bg-[#3A3A3C] text-white flex items-center justify-center transition-colors cursor-pointer active:scale-95 shrink-0"
           >
-            <Send size={15} />
+            <Send size={13} className="text-[#0A84FF]" />
           </button>
 
           <button
             onClick={onOpenNotifications}
-            className="px-4 py-2 rounded-full bg-[#2C2C2E] hover:bg-[#3A3A3C] text-white text-xs font-semibold transition-colors cursor-pointer active:scale-95"
+            className="px-3 py-1.5 rounded-full bg-[#2C2C2E] hover:bg-[#3A3A3C] text-white text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer active:scale-95 shrink-0"
           >
             Настроить
           </button>
@@ -186,20 +186,20 @@ export const MainDashboard: React.FC<MainDashboardProps> = ({
 
       {/* 3. Active Trails & Streaks Section */}
       <section className="flex flex-col gap-4">
-        <div className="flex items-center justify-between px-1">
-          <div>
+        <div className="flex items-center justify-between gap-3 px-1">
+          <div className="min-w-0 flex-1">
             <h3 className="text-xl font-bold text-white tracking-tight">
               Тропы
             </h3>
             <p className="text-xs text-[#8E8E93] mt-0.5">
-              Зажмите карточку или нажмите «•••» для настройки
+              Управление и выбор дисциплины
             </p>
           </div>
           <button
             onClick={() => onOpenCreateTrail()}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-full bg-white text-black font-semibold text-xs tracking-tight hover:bg-zinc-200 transition-all cursor-pointer active:scale-95"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-white text-black font-semibold text-xs tracking-tight hover:bg-zinc-200 transition-all cursor-pointer active:scale-95 shrink-0 whitespace-nowrap"
           >
-            <Plus size={15} />
+            <Plus size={14} strokeWidth={2.5} />
             <span>Новая тропа</span>
           </button>
         </div>
@@ -264,10 +264,10 @@ export const MainDashboard: React.FC<MainDashboardProps> = ({
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 shrink-0">
                       <button
                         onClick={() => onOpenTrailView(disc)}
-                        className="px-3.5 py-1.5 rounded-full bg-[#2C2C2E] hover:bg-[#3A3A3C] text-white transition-colors flex items-center gap-1.5 text-xs font-semibold cursor-pointer"
+                        className="px-3.5 py-1.5 rounded-full bg-[#2C2C2E] hover:bg-[#3A3A3C] text-white transition-colors flex items-center gap-1.5 text-xs font-semibold cursor-pointer shrink-0 whitespace-nowrap"
                         title="Открыть карту тропы"
                       >
                         <Map size={14} className="text-[#0A84FF]" />
@@ -280,7 +280,7 @@ export const MainDashboard: React.FC<MainDashboardProps> = ({
                           e.stopPropagation()
                           setSelectedActionDiscipline(disc)
                         }}
-                        className="w-8 h-8 rounded-full bg-[#2C2C2E] hover:bg-[#3A3A3C] text-[#8E8E93] hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+                        className="w-8 h-8 rounded-full bg-[#2C2C2E] hover:bg-[#3A3A3C] text-[#8E8E93] hover:text-white flex items-center justify-center transition-colors cursor-pointer shrink-0"
                         title="Управление тропой"
                       >
                         <MoreHorizontal size={15} />
@@ -313,21 +313,21 @@ export const MainDashboard: React.FC<MainDashboardProps> = ({
 
                       <button
                         onClick={() => onStartWorkout(nextWorkout)}
-                        className="px-5 py-2.5 rounded-full bg-white hover:bg-zinc-200 text-black font-bold text-xs tracking-tight flex items-center gap-1.5 transition-all cursor-pointer active:scale-95"
+                        className="px-5 py-2.5 rounded-full bg-white hover:bg-zinc-200 text-black font-bold text-xs tracking-tight flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 shrink-0 whitespace-nowrap"
                       >
                         <Play size={13} fill="currentColor" />
                         <span>Начать</span>
                       </button>
                     </div>
                   ) : (
-                    <div className="flex items-center justify-between bg-[#2C2C2E] rounded-2xl p-4 text-[#30D158] text-xs font-bold">
-                      <div className="flex items-center gap-2">
-                        <CheckCircle2 size={18} />
-                        <span>Тропа полностью завершена!</span>
+                    <div className="flex items-center justify-between bg-[#2C2C2E] rounded-2xl p-4 text-[#30D158] text-xs font-bold gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <CheckCircle2 size={18} className="shrink-0" />
+                        <span className="truncate">Тропа полностью завершена!</span>
                       </div>
                       <button
                         onClick={() => onOpenCreateTrail(disc)}
-                        className="px-3.5 py-1.5 rounded-full bg-[#30D158]/15 text-[#30D158] hover:bg-[#30D158]/25 text-xs font-semibold transition-colors"
+                        className="px-3.5 py-1.5 rounded-full bg-[#30D158]/15 text-[#30D158] hover:bg-[#30D158]/25 text-xs font-semibold transition-colors shrink-0 whitespace-nowrap"
                       >
                         Новый цикл
                       </button>
