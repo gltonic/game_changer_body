@@ -270,18 +270,32 @@ function createApp(config) {
                 .select('*')
                 .eq('user_id', fromUserId);
             if (sourceDisciplines && sourceDisciplines.length > 0) {
+                // Fetch existing target disciplines so we never downgrade user progress
+                const { data: targetDisciplines } = await supabase
+                    .from('user_disciplines')
+                    .select('discipline, current_workout_index')
+                    .eq('user_id', toUserId);
+                const targetMap = new Map((targetDisciplines || []).map((d) => [d.discipline, d.current_workout_index]));
                 for (const item of sourceDisciplines) {
-                    await supabase.from('user_disciplines').upsert({
-                        user_id: toUserId,
-                        discipline: item.discipline,
-                        max_baseline: item.max_baseline,
-                        weight_kg: item.weight_kg,
-                        total_workouts: item.total_workouts,
-                        current_workout_index: item.current_workout_index,
-                        trail_data: item.trail_data,
-                        updated_at: new Date().toISOString()
-                    }, { onConflict: 'user_id,discipline' });
+                    const currentTargetIndex = targetMap.get(item.discipline);
+                    if (currentTargetIndex === undefined || item.current_workout_index > currentTargetIndex) {
+                        await supabase.from('user_disciplines').upsert({
+                            user_id: toUserId,
+                            discipline: item.discipline,
+                            max_baseline: item.max_baseline,
+                            weight_kg: item.weight_kg,
+                            total_workouts: item.total_workouts,
+                            current_workout_index: item.current_workout_index,
+                            trail_data: item.trail_data,
+                            updated_at: new Date().toISOString()
+                        }, { onConflict: 'user_id,discipline' });
+                    }
                 }
+                // Clean up source guest disciplines so they can never overwrite user progress again
+                await supabase
+                    .from('user_disciplines')
+                    .delete()
+                    .eq('user_id', fromUserId);
             }
             // 2. Migrate workout history
             await supabase

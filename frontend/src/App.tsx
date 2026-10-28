@@ -50,7 +50,16 @@ export function App() {
   const [currentUser, setCurrentUser] = useState<any>(null)
   const [isAuthOpen, setIsAuthOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<ActiveTab>('dashboard')
-  const [currentDiscipline, setCurrentDiscipline] = useState<Discipline>('pullups')
+  // Remember last selected discipline across reloads
+  const [currentDiscipline, setCurrentDiscipline] = useState<Discipline>(() => {
+    try {
+      const saved = localStorage.getItem('gc_body_active_discipline')
+      if (saved && DISCIPLINES_META[saved as Discipline]) {
+        return saved as Discipline
+      }
+    } catch {}
+    return 'pullups'
+  })
 
   // Storage of disciplines: discipline -> DisciplineData
   const [userDisciplines, setUserDisciplines] = useState<Record<string, DisciplineData>>(() => {
@@ -217,12 +226,16 @@ export function App() {
 
     const {
       data: { subscription }
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
         setCurrentUser(session.user)
-        // Automatically migrate guest/device progress to newly logged in account
-        const deviceId = getDeviceId()
-        await migrateGuestDataToUser(BACKEND_URL, deviceId, session.user.id)
+        // Automatically migrate guest/device progress only on explicit sign in
+        if (event === 'SIGNED_IN') {
+          const deviceId = getDeviceId()
+          if (deviceId && deviceId !== session.user.id) {
+            await migrateGuestDataToUser(BACKEND_URL, deviceId, session.user.id)
+          }
+        }
         fetchUserDisciplines(session.user.id)
         fetchWorkoutHistory(session.user.id)
       } else {
@@ -256,6 +269,12 @@ export function App() {
               saveDisciplineToCloud(BACKEND_URL, activeId, disc, local)
             }
           }
+          // Upload local disciplines that don't exist in cloud yet
+          for (const [disc, localData] of Object.entries(prev)) {
+            if (!cloudDisciplines[disc]) {
+              saveDisciplineToCloud(BACKEND_URL, activeId, disc, localData)
+            }
+          }
           saveLocalDisciplines(merged)
           return merged
         })
@@ -277,6 +296,13 @@ export function App() {
   useEffect(() => {
     saveLocalDisciplines(userDisciplines)
   }, [userDisciplines])
+
+  // Save active discipline selection
+  useEffect(() => {
+    try {
+      localStorage.setItem('gc_body_active_discipline', currentDiscipline)
+    } catch {}
+  }, [currentDiscipline])
 
   useEffect(() => {
     try {
@@ -309,14 +335,76 @@ export function App() {
         const mapped: Record<string, DisciplineData> = {}
         for (const item of data) {
           mapped[item.discipline] = {
-            max_baseline: item.max_baseline,
-            weight_kg: item.weight_kg,
+            max_baseline: Number(item.max_baseline),
+            weight_kg: item.weight_kg != null ? Number(item.weight_kg) : undefined,
             total_workouts: item.total_workouts,
             current_workout_index: item.current_workout_index,
             trail_data: item.trail_data
           }
         }
-        setUserDisciplines((prev) => ({ ...prev, ...mapped }))
+
+        setUserDisciplines((prev) => {
+          const merged = { ...prev }
+          for (const [disc, cloudData] of Object.entries(mapped)) {
+            const local = prev[disc]
+            if (!local || cloudData.current_workout_index >= local.current_workout_index) {
+              merged[disc] = cloudData
+            } else if (local && local.current_workout_index > cloudData.current_workout_index) {
+              // Local is ahead (e.g. offline workout or pending sync), keep local and sync forward
+              merged[disc] = local
+              supabase.from('user_disciplines').upsert(
+                {
+                  user_id: userId,
+                  discipline: disc,
+                  max_baseline: local.max_baseline,
+                  weight_kg: local.weight_kg != null ? local.weight_kg : null,
+                  total_workouts: local.total_workouts,
+                  current_workout_index: local.current_workout_index,
+                  trail_data: local.trail_data,
+                  updated_at: new Date().toISOString()
+                },
+                { onConflict: 'user_id,discipline' }
+              )
+            }
+          }
+          // If local has trails not yet in Supabase, upload them
+          for (const [disc, localData] of Object.entries(prev)) {
+            if (!mapped[disc]) {
+              supabase.from('user_disciplines').upsert(
+                {
+                  user_id: userId,
+                  discipline: disc,
+                  max_baseline: localData.max_baseline,
+                  weight_kg: localData.weight_kg != null ? localData.weight_kg : null,
+                  total_workouts: localData.total_workouts,
+                  current_workout_index: localData.current_workout_index,
+                  trail_data: localData.trail_data,
+                  updated_at: new Date().toISOString()
+                },
+                { onConflict: 'user_id,discipline' }
+              )
+            }
+          }
+          saveLocalDisciplines(merged)
+          return merged
+        })
+      } else if (!error && (!data || data.length === 0)) {
+        // If Supabase is empty for this user, push all local trails to Supabase
+        for (const [disc, localData] of Object.entries(userDisciplines)) {
+          supabase.from('user_disciplines').upsert(
+            {
+              user_id: userId,
+              discipline: disc,
+              max_baseline: localData.max_baseline,
+              weight_kg: localData.weight_kg != null ? localData.weight_kg : null,
+              total_workouts: localData.total_workouts,
+              current_workout_index: localData.current_workout_index,
+              trail_data: localData.trail_data,
+              updated_at: new Date().toISOString()
+            },
+            { onConflict: 'user_id,discipline' }
+          )
+        }
       }
     } catch (err) {
       console.error('Error fetching disciplines from Supabase:', err)
@@ -476,18 +564,24 @@ export function App() {
     // Direct Supabase sync if user is signed in
     if (currentUser?.id) {
       try {
-        await supabase.from('user_disciplines').upsert({
-          user_id: currentUser.id,
-          discipline: workoutDiscipline,
-          max_baseline: currentData.max_baseline,
-          weight_kg: currentData.weight_kg,
-          total_workouts: currentData.total_workouts,
-          current_workout_index: nextIndex,
-          trail_data: updatedTrail,
-          updated_at: new Date().toISOString()
-        })
+        const { error: discError } = await supabase.from('user_disciplines').upsert(
+          {
+            user_id: currentUser.id,
+            discipline: workoutDiscipline,
+            max_baseline: currentData.max_baseline,
+            weight_kg: currentData.weight_kg != null ? currentData.weight_kg : null,
+            total_workouts: currentData.total_workouts,
+            current_workout_index: nextIndex,
+            trail_data: updatedTrail,
+            updated_at: new Date().toISOString()
+          },
+          { onConflict: 'user_id,discipline' }
+        )
+        if (discError) {
+          console.error('Failed saving workout result to Supabase:', discError)
+        }
 
-        await supabase.from('workout_history').insert({
+        const { error: histError } = await supabase.from('workout_history').insert({
           user_id: currentUser.id,
           discipline: workoutDiscipline,
           workout_index: currentData.current_workout_index + 1,
@@ -495,6 +589,9 @@ export function App() {
           feedback,
           completed_at: new Date().toISOString()
         })
+        if (histError) {
+          console.error('Failed saving workout history to Supabase:', histError)
+        }
       } catch (err) {
         console.error('Failed saving workout result to Supabase:', err)
       }

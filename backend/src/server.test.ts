@@ -185,6 +185,7 @@ describe('Backend Push Server & Scheduler API', () => {
       if (table === 'user_disciplines') {
         return {
           select: vi.fn().mockReturnThis(),
+          delete: vi.fn().mockReturnThis(),
           eq: vi.fn().mockResolvedValue({ data: mockGuestDisciplines, error: null }),
           upsert: vi.fn().mockResolvedValue({ error: null })
         }
