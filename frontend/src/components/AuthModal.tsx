@@ -44,7 +44,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onSuccess
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] bg-black/85 backdrop-blur-2xl animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 safe-modal-container bg-black/85 backdrop-blur-2xl animate-in fade-in duration-200">
       {/* iOS style modal surface: borderless, solid #1C1C1E */}
       <div className="relative w-full max-w-sm bg-[#1C1C1E] rounded-3xl p-6 shadow-2xl flex flex-col gap-5">
         <button

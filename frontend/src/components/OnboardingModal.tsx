@@ -89,29 +89,31 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
   const allDisciplines: Discipline[] = ['pullups', 'pushups', 'plank', 'lsit', 'dumbbells']
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] bg-black/85 backdrop-blur-2xl animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 safe-modal-container bg-black/85 backdrop-blur-2xl animate-in fade-in duration-200">
       {/* iOS style modal surface: borderless, solid #1C1C1E */}
       <div className="relative w-full max-w-md bg-[#1C1C1E] rounded-3xl p-6 shadow-2xl flex flex-col gap-5">
-        <button
-          onClick={onClose}
-          className="absolute top-5 right-5 text-[#8E8E93] hover:text-white transition-colors p-2 rounded-full hover:bg-[#2C2C2E] cursor-pointer"
-        >
-          <X size={18} />
-        </button>
-
         {/* Header */}
-        <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-full bg-[#2C2C2E] flex items-center justify-center text-2xl">
-            {meta.icon}
+        <div className="flex items-start justify-between gap-3 w-full">
+          <div className="flex items-center gap-3.5 min-w-0 flex-1">
+            <div className="w-12 h-12 rounded-full bg-[#2C2C2E] flex items-center justify-center text-2xl shrink-0">
+              {meta.icon}
+            </div>
+            <div className="flex flex-col min-w-0">
+              <h3 className="text-xl font-bold text-white tracking-tight truncate">
+                {meta.label}
+              </h3>
+              <p className="text-xs text-[#8E8E93] mt-0.5 truncate">
+                Настройка прогрессии и параметров тропы
+              </p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-xl font-bold text-white tracking-tight">
-              {meta.label}
-            </h3>
-            <p className="text-xs text-[#8E8E93] mt-0.5">
-              Настройка прогрессии и параметров тропы
-            </p>
-          </div>
+          <button
+            onClick={onClose}
+            className="text-[#8E8E93] hover:text-white transition-colors p-2 rounded-full hover:bg-[#2C2C2E] cursor-pointer shrink-0 -mt-1 -mr-1"
+            title="Закрыть"
+          >
+            <X size={20} />
+          </button>
         </div>
 
         {/* 5 Disciplines horizontal switch */}

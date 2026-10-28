@@ -62,55 +62,59 @@ export const WorkoutModal: React.FC<WorkoutModalProps> = ({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] bg-black/85 backdrop-blur-2xl animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 safe-modal-container bg-black/85 backdrop-blur-2xl animate-in fade-in duration-200">
       {/* iOS style modal surface: borderless, solid #1C1C1E */}
-      <div className="relative w-full max-w-md bg-[#1C1C1E] rounded-3xl p-6 shadow-2xl flex flex-col gap-5">
-        {/* Top Actions: Wake lock status + Close Button */}
-        <div className="absolute top-5 right-5 flex items-center gap-2">
-          {wakeLock.isLocked && (
-            <span
-              title="Экран заблокирован от выключения на время тренировки"
-              className="flex items-center gap-1 text-[11px] font-medium text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20 animate-in fade-in"
-            >
-              <Sun size={11} className="text-emerald-400" />
-              <span>Экран активен</span>
-            </span>
-          )}
+      <div className="relative w-full max-w-md bg-[#1C1C1E] rounded-3xl p-6 shadow-2xl flex flex-col gap-4">
+        {/* Header Row: Discipline Icon + Title + Close Button */}
+        <div className="flex items-start justify-between gap-3 w-full">
+          <div className="flex items-center gap-3.5 min-w-0 flex-1">
+            <div className="w-12 h-12 rounded-full bg-[#2C2C2E] flex items-center justify-center text-2xl shrink-0">
+              {meta.icon}
+            </div>
+            <div className="flex flex-col min-w-0">
+              <div className="flex items-center gap-2 min-w-0">
+                <h2 className="text-xl font-bold text-white tracking-tight truncate">
+                  {meta.label}
+                </h2>
+                <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#2C2C2E] text-[#8E8E93] shrink-0">
+                  #{plan.workoutIndex}
+                </span>
+              </div>
+              <p className="text-xs text-[#8E8E93] mt-0.5 truncate">
+                5 подходов • {plan.weightKg ? `${plan.weightKg} кг • ` : ''}Отдых {plan.restSeconds}с
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={onClose}
+            className="text-[#8E8E93] hover:text-white transition-colors p-2 rounded-full hover:bg-[#2C2C2E] cursor-pointer shrink-0 -mt-1 -mr-1"
+            title="Закрыть"
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        {/* Auxiliary Bar: Sound Test & Wake Lock status */}
+        <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={testSoundAlert}
             title="Проверить громкость и звук таймера"
-            className="flex items-center gap-1 text-[11px] font-medium text-white/80 hover:text-white bg-[#2C2C2E] hover:bg-[#3A3A3C] px-2.5 py-1 rounded-full transition-colors active:scale-95 cursor-pointer"
+            className="flex items-center gap-1.5 text-xs font-medium text-white/90 bg-[#2C2C2E] hover:bg-[#3A3A3C] px-3 py-1.5 rounded-full transition-colors active:scale-95 cursor-pointer"
           >
-            <Volume2 size={12} className="text-[#0A84FF]" />
+            <Volume2 size={13} className="text-[#0A84FF]" />
             <span>Тест звука</span>
           </button>
-          <button
-            onClick={onClose}
-            className="text-[#8E8E93] hover:text-white transition-colors p-2 rounded-full hover:bg-[#2C2C2E] cursor-pointer"
-          >
-            <X size={18} />
-          </button>
-        </div>
-
-        {/* Header */}
-        <div className="flex items-center gap-3.5">
-          <div className="w-12 h-12 rounded-full bg-[#2C2C2E] flex items-center justify-center text-2xl">
-            {meta.icon}
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-xl font-bold text-white tracking-tight">
-                {meta.label}
-              </h2>
-              <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#2C2C2E] text-[#8E8E93]">
-                #{plan.workoutIndex}
-              </span>
-            </div>
-            <p className="text-xs text-[#8E8E93] mt-0.5">
-              5 подходов • {plan.weightKg ? `${plan.weightKg} кг • ` : ''}Отдых {plan.restSeconds}с
-            </p>
-          </div>
+          {wakeLock.isLocked && (
+            <span
+              title="Экран заблокирован от выключения на время тренировки"
+              className="flex items-center gap-1.5 text-xs font-medium text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded-full border border-emerald-500/20"
+            >
+              <Sun size={12} className="text-emerald-400" />
+              <span>Экран активен</span>
+            </span>
+          )}
         </div>
 
         {/* 5 Sets Indicator */}

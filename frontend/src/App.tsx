@@ -625,14 +625,14 @@ export function App() {
     <div className="flex flex-col min-h-screen bg-black text-white selection:bg-white/20">
       {/* Toast popup (iOS style notification banner) */}
       {toastMessage && (
-        <div className="fixed top-[max(1rem,calc(env(safe-area-inset-top)+0.5rem))] left-1/2 -translate-x-1/2 z-50 max-w-sm w-[90%] bg-[#1C1C1E] text-white px-4 py-3 rounded-2xl shadow-2xl text-xs font-semibold flex items-center gap-2.5 animate-in slide-in-from-top duration-300">
+        <div className="fixed toast-safe-top left-1/2 -translate-x-1/2 z-50 max-w-sm w-[90%] bg-[#1C1C1E] text-white px-4 py-3 rounded-2xl shadow-2xl text-xs font-semibold flex items-center gap-2.5 animate-in slide-in-from-top duration-300">
           <Sparkles size={16} className="text-[#FF9F0A] shrink-0" />
           <span>{toastMessage}</span>
         </div>
       )}
 
       {/* Top Header with iOS Safe Area support */}
-      <header className="sticky top-0 z-40 bg-black/85 backdrop-blur-xl border-b border-white/5 px-4 pt-[max(0.75rem,calc(env(safe-area-inset-top)+0.25rem))] pb-2.5">
+      <header className="sticky top-0 z-40 bg-black/85 backdrop-blur-xl border-b border-white/5 px-4 safe-top-header pb-2.5">
         <div className="max-w-md mx-auto flex items-center justify-between gap-2">
           {/* Left: Brand Logo & Title */}
           <div
